@@ -1,22 +1,22 @@
 CFLAGS=-Wall -g
-FICHEIROS=cgi.h estado.c estado.h exemplo.c Makefile
+FICHEIROS=cgi.h estado.c estado.h jogo.c Makefile
 
-install: exemplo
-	sudo cp exemplo /usr/lib/cgi-bin
+install: jogo
+	sudo cp jogo /usr/lib/cgi-bin
 	touch install
 
-exemplo: exemplo.o estado.o
-	cc -o exemplo exemplo.o estado.o
+jogo: jogo.o estado.o
+	cc -o jogo jogo.o estado.o
 
-exemplo.zip: $(FICHEIROS)
-	zip -9 exemplo.zip $(FICHEIROS)
+jogo.zip: $(FICHEIROS)
+	zip -9 jogo.zip $(FICHEIROS)
 
 doc:
 	doxygen -g
 	doxygen
 
 clean:
-	rm -rf *.o exemplo Doxyfile latex html install
+	rm -rf *.o jogo Doxyfile latex html install
 
 estado.o: estado.c estado.h
-exemplo.o: exemplo.c cgi.h estado.h
+jogo.o: jogo.c cgi.h estado.h

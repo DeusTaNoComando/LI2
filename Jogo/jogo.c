@@ -111,7 +111,7 @@ void imprime_movimento(ESTADO e, int dx, int dy) {
 
 	novo.jog.x = x;
 	novo.jog.y = y;
-	sprintf(link, "http://localhost/cgi-bin/exemplo?%s", estado2str(novo));
+	sprintf(link, "http://localhost/cgi-bin/jogo?%s", estado2str(novo));
 	ABRIR_LINK(link);
 	imprime_casa(x, y);
 	FECHAR_LINK;
