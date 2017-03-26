@@ -49,6 +49,9 @@ Macros úteis para gerar CGIs
 #define QUADRADO(X, Y, ESCALA, COR)			printf("<rect x=%d y=%d width=%d height=%d fill=%s />\n", \
 												ESCALA * X, ESCALA* Y, ESCALA, ESCALA, COR)
 
+#define QUADRADO_LINK(X, Y, ESCALA)			printf("<rect x=%d y=%d width=%d height=%d fill-opacity=0.0 />\n", \
+												ESCALA * X, ESCALA* Y, ESCALA, ESCALA)
+
 /**
 \brief Macro para abrir um link
 @param link O caminho para o link

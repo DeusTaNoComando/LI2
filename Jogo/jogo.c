@@ -17,7 +17,7 @@ int posicao_igual(POSICAO p, int x, int y) {
 }
 
 int tem_porta(ESTADO e, int x, int y) {
-	return posicao_igual(e.porta_entrada, x, y) || posicao_igual(e.porta_saida, x, y);
+	return (posicao_igual(e.porta_entrada, x, y) || posicao_igual(e.porta_saida, x, y));
 }
 
 int tem_jogador(ESTADO e, int x, int y) {
@@ -94,6 +94,10 @@ ESTADO inicializar_obstaculos(ESTADO e, int num) {
 
 ESTADO inicializar() {
 	ESTADO e = {{0}};
+	e.porta_entrada.x = 9;
+	e.porta_entrada.y = 9;
+	e.porta_saida.x = 0;
+	e.porta_saida.y = 0;
 	e.jog.x = 9;
 	e.jog.y = 9;
 	e = inicializar_inimigos(e, 20);
@@ -154,17 +158,14 @@ void desenha_porta(int x,int y) {
 }
 
 void imprime_porta(ESTADO e) {
-			int x1,y1,x2,y2;
-			x1 = 0; y1 = 0;
-			x2 = 9; y2 = 9;
+			desenha_porta(e.porta_entrada.x,e.porta_entrada.y);
+			desenha_porta(e.porta_saida.x,e.porta_saida.y);
 
-			desenha_porta(x1,y1);
-			e.porta_saida.x = x1;
-			e.porta_saida.x = x1;
-
-			desenha_porta(x2,y2);
-			e.porta_saida.x = x2;
-			e.porta_saida.x = x2;
+			if (abs(e.jog.x - e.porta_saida.x) <= 1 && abs(e.jog.y - e.porta_saida.y) <=1) {
+				ABRIR_LINK("http://localhost/cgi-bin/jogo");
+				QUADRADO_LINK(e.porta_saida.x, e.porta_saida.y, ESCALA);
+				FECHAR_LINK;
+			}
 }
 
 int main() {
