@@ -34,6 +34,9 @@ typedef struct estado {
 	POSICAO inimigo[MAX_INIMIGOS];
 	/** \brief Array com a posição dos obstáculos */
 	POSICAO obstaculo[MAX_OBSTACULOS];
+	/** \brief Posciçoes das portas */
+	POSICAO porta_entrada;
+	POSICAO porta_saida;
 } ESTADO;
 
 /**
@@ -44,7 +47,7 @@ typedef struct estado {
 char *estado2str(ESTADO e);
 
 /**
-\brief Função que converte uma string num estado 
+\brief Função que converte uma string num estado
 @param argumentos Uma string contendo os argumentos passados à CGI
 @returns O estado correspondente à string dos argumentos
 */

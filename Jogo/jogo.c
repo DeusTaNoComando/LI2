@@ -16,6 +16,10 @@ int posicao_igual(POSICAO p, int x, int y) {
     return p.x == x && p.y == y;
 }
 
+int tem_porta(ESTADO e, int x, int y) {
+	return posicao_igual(e.porta_entrada, x, y) || posicao_igual(e.porta_saida, x, y);
+}
+
 int tem_jogador(ESTADO e, int x, int y) {
     return posicao_igual(e.jog, x, y);
 }
@@ -37,12 +41,11 @@ int tem_obstaculo(ESTADO e, int x, int y) {
 }
 
 int posicao_ocupada(ESTADO e, int x, int y) {
-    return tem_jogador(e, x, y) || tem_inimigo(e, x, y) || tem_obstaculo(e, x, y);
+    return tem_jogador(e, x, y) || tem_inimigo(e, x, y) || tem_obstaculo(e, x, y) || tem_porta(e, x,y);
 }
 
-
 void imprime_casa(int x, int y) {
-	char *cor[] = {"#666600", "#555500"};
+	char *cor[] = {"#42993e", "#55de50"};
 	int idx = (x + y) % 2;
 	QUADRADO(x, y,ESCALA, cor[idx]);
 }
@@ -89,10 +92,9 @@ ESTADO inicializar_obstaculos(ESTADO e, int num) {
     return e;
 }
 
-
 ESTADO inicializar() {
 	ESTADO e = {{0}};
-	e.jog.x = 5;
+	e.jog.x = 9;
 	e.jog.y = 9;
 	e = inicializar_inimigos(e, 20);
     e = inicializar_obstaculos(e, 20);
@@ -147,6 +149,24 @@ void imprime_obstaculos(ESTADO e) {
 		IMAGEM(e.obstaculo[i].x, e.obstaculo[i].y, ESCALA, "lava_pool1.png");
 }
 
+void desenha_porta(int x,int y) {
+	IMAGEM(x, y, ESCALA, "trapdoor1.png");
+}
+
+void imprime_porta(ESTADO e) {
+			int x1,y1,x2,y2;
+			x1 = 0; y1 = 0;
+			x2 = 9; y2 = 9;
+
+			desenha_porta(x1,y1);
+			e.porta_saida.x = x1;
+			e.porta_saida.x = x1;
+
+			desenha_porta(x2,y2);
+			e.porta_saida.x = x2;
+			e.porta_saida.x = x2;
+}
+
 int main() {
     srandom(time(NULL));
 	int x, y;
@@ -158,6 +178,7 @@ int main() {
 		for(x = 0; x < 10; x++)
 			imprime_casa(x, y);
 
+	imprime_porta(e);
 	imprime_inimigos(e);
 	imprime_obstaculos(e);
 	imprime_jogador(e);
