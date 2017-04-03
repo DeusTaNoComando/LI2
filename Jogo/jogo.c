@@ -44,6 +44,13 @@ int posicao_ocupada(ESTADO e, int x, int y) {
     return tem_jogador(e, x, y) || tem_inimigo(e, x, y) || tem_obstaculo(e, x, y) || tem_porta(e, x,y);
 }
 
+
+void imprime_quadr_link (int x, int y, char* link) {
+	ABRIR_LINK(link);
+	QUADRADO_LINK(x, y, ESCALA);
+	FECHAR_LINK;
+}
+
 void imprime_casa(int x, int y) {
 	char *cor[] = {"#42993e", "#55de50"};
 	int idx = (x + y) % 2;
@@ -105,6 +112,17 @@ ESTADO inicializar() {
 	return e;
 }
 
+ESTADO apaga_inimigo (ESTADO e, int x, int y) {
+	int i;
+	for (i=0; i < (int)e.num_inimigos; i++)
+		if (e.inimigo[i].x == x && e.inimigo[i].y == y) {
+				for (; i < (int)e.num_inimigos; i ++) e.inimigo[i] = e.inimigo[i+1];
+				e.inimigo[i].x = 0; e.inimigo[i].y = 0;
+				e.num_inimigos--;
+		}
+	return e;
+}
+
 void imprime_movimento(ESTADO e, int dx, int dy) {
 	ESTADO novo = e;
 	int x = e.jog.x + dx;
@@ -113,14 +131,13 @@ void imprime_movimento(ESTADO e, int dx, int dy) {
 	if(!posicao_valida(x, y))
 		return;
     if(posicao_ocupada(e, x, y))
-        return;
+        if (!tem_inimigo(e, x, y)) return;
 
 	novo.jog.x = x;
 	novo.jog.y = y;
+	if (tem_inimigo(e, x, y)) novo = apaga_inimigo(novo, x, y);
 	sprintf(link, "http://localhost/cgi-bin/jogo?%s", estado2str(novo));
-	ABRIR_LINK(link);
-	imprime_casa(x, y);
-	FECHAR_LINK;
+	imprime_quadr_link(x, y, link);
 }
 
 void imprime_movimentos(ESTADO e) {
@@ -158,13 +175,11 @@ void desenha_porta(int x,int y) {
 }
 
 void imprime_porta(ESTADO e) {
-			desenha_porta(e.porta_entrada.x,e.porta_entrada.y);
-			desenha_porta(e.porta_saida.x,e.porta_saida.y);
+			desenha_porta(e.porta_entrada.x, e.porta_entrada.y);
+			desenha_porta(e.porta_saida.x, e.porta_saida.y);
 
 			if (abs(e.jog.x - e.porta_saida.x) <= 1 && abs(e.jog.y - e.porta_saida.y) <=1) {
-				ABRIR_LINK("http://localhost/cgi-bin/jogo");
-				QUADRADO_LINK(e.porta_saida.x, e.porta_saida.y, ESCALA);
-				FECHAR_LINK;
+				imprime_quadr_link (e.porta_saida.x, e.porta_saida.y, "http://localhost/cgi-bin/jogo");
 			}
 }
 
