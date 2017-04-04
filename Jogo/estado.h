@@ -37,6 +37,12 @@ typedef struct estado {
 	/** \brief Posciçoes das portas */
 	POSICAO porta_entrada;
 	POSICAO porta_saida;
+	/** \brief Fase de jogo, usado para saber se é o turno do jogador e para as animações */
+	char fase;
+	/** \brief Score do jogador */
+	char score;
+	/** \brief Posição a iluminar */
+	POSICAO ilumina;
 } ESTADO;
 
 /**

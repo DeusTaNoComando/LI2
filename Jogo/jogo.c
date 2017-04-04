@@ -44,11 +44,26 @@ int posicao_ocupada(ESTADO e, int x, int y) {
     return tem_jogador(e, x, y) || tem_inimigo(e, x, y) || tem_obstaculo(e, x, y) || tem_porta(e, x,y);
 }
 
-
 void imprime_quadr_link (int x, int y, char* link) {
 	ABRIR_LINK(link);
 	QUADRADO_LINK(x, y, ESCALA);
 	FECHAR_LINK;
+}
+
+void imprime_casa_iluminada (ESTADO e, int x, int y) {
+	if (!posicao_valida(x,y)) return;
+
+	char *cor[] = {"#ee6b55", "#ff9a73", "#ba0a0a", "#fcff00", "#3c4936"};
+	int idx;
+	if (tem_inimigo(e, x, y))
+		idx = 2;
+	else if (tem_porta(e, x, y))
+ 		idx = 3;
+	else if (tem_obstaculo(e, x,y))
+		idx = 4;
+	else
+		idx = (x + y) % 2;
+	QUADRADO(x, y,ESCALA, cor[idx]);
 }
 
 void imprime_casa(int x, int y) {
@@ -108,7 +123,10 @@ ESTADO inicializar() {
 	e.jog.x = 9;
 	e.jog.y = 9;
 	e = inicializar_inimigos(e, 20);
-    e = inicializar_obstaculos(e, 20);
+	e = inicializar_obstaculos(e, 20);
+	e.fase = 0;
+	e.score = 0;
+	e.ilumina.x = TAM; e.ilumina.y = TAM;
 	return e;
 }
 
@@ -119,6 +137,7 @@ ESTADO apaga_inimigo (ESTADO e, int x, int y) {
 				for (; i < (int)e.num_inimigos; i ++) e.inimigo[i] = e.inimigo[i+1];
 				e.inimigo[i].x = 0; e.inimigo[i].y = 0;
 				e.num_inimigos--;
+				e.score++;
 		}
 	return e;
 }
@@ -133,8 +152,9 @@ void imprime_movimento(ESTADO e, int dx, int dy) {
     if(posicao_ocupada(e, x, y))
         if (!tem_inimigo(e, x, y)) return;
 
-	novo.jog.x = x;
-	novo.jog.y = y;
+	novo.jog.x = x; novo.jog.y = y;
+	novo.fase = 1;
+	novo.ilumina.x = TAM; novo.ilumina.y = TAM;
 	if (tem_inimigo(e, x, y)) novo = apaga_inimigo(novo, x, y);
 	sprintf(link, "http://localhost/cgi-bin/jogo?%s", estado2str(novo));
 	imprime_quadr_link(x, y, link);
@@ -147,8 +167,20 @@ void imprime_movimentos(ESTADO e) {
             imprime_movimento(e, dx, dy);
 }
 
+void cria_posicao_a_iluminar(ESTADO e, int x, int y) {
+	ESTADO novo = e;
+	if (posicao_igual(novo.ilumina, x, y)) {novo.ilumina.x = TAM; novo.ilumina.y = TAM;}
+	else {novo.ilumina.x = x; novo.ilumina.y = y;}
+
+	char link[MAX_BUFFER];
+	sprintf(link, "http://localhost/cgi-bin/jogo?%s", estado2str(novo));
+	imprime_quadr_link(x, y, link);
+}
+
 void imprime_jogador(ESTADO e) {
+	if (!posicao_valida(e.jog.x, e.jog.y)) return;
 	IMAGEM(e.jog.x, e.jog.y, ESCALA, "DwellerN_03.png");
+	cria_posicao_a_iluminar(e, e.jog.x, e.jog.y);
 	imprime_movimentos(e);
 }
 
@@ -160,14 +192,16 @@ ESTADO ler_estado(char *args) {
 
 void imprime_inimigos(ESTADO e) {
 	int i;
-	for(i = 0; i < e.num_inimigos; i++)
+	for(i = 0; i < (int)e.num_inimigos; i++)
 		IMAGEM(e.inimigo[i].x, e.inimigo[i].y, ESCALA, "Driders_04.png");
+		cria_posicao_a_iluminar(e, e.inimigo[i].x, e.inimigo[i].y);
 }
 
 void imprime_obstaculos(ESTADO e) {
 	int i;
 	for(i = 0; i < e.num_obstaculos; i++)
 		IMAGEM(e.obstaculo[i].x, e.obstaculo[i].y, ESCALA, "lava_pool1.png");
+
 }
 
 void desenha_porta(int x,int y) {
@@ -183,6 +217,38 @@ void imprime_porta(ESTADO e) {
 			}
 }
 
+ESTADO mover_inimigos (ESTADO e) {
+	int i;
+	for (i=0; i<(int)e.num_inimigos; i++)
+		if ((abs (e.jog.x - e.inimigo[i].x) == 1 && abs(e.jog.y - e.inimigo[i].y) == 0) || (abs (e.jog.x - e.inimigo[i].x) == 0 && abs(e.jog.y - e.inimigo[i].y) == 1)) {
+			e.inimigo[i].x = e.jog.x; e.inimigo[i].y = e.jog.y;
+			e.jog.x = TAM; e.jog.y = TAM;
+			break;
+		}
+	return e;
+}
+
+void iluminar_inimigo (ESTADO e, int x, int y) {
+	int dx, dy;
+	for (dx=-1; dx<= 1; dx++)
+		for (dy=-1; dy<= 1; dy++)
+			if (dx == 0 || dy == 0) imprime_casa_iluminada(e, x + dx, y + dy);
+}
+
+void iluminar_jogador (ESTADO e, int x, int y) {
+	int dx, dy;
+	for (dx=-1; dx<= 1; dx++)
+		for (dy=-1; dy<= 1; dy++) imprime_casa_iluminada(e, x + dx, y + dy);
+}
+
+void imprime_ilumi (ESTADO e) {
+	int x = e.ilumina.x;
+	int y = e.ilumina.y;
+
+	if (tem_jogador(e, x, y)) iluminar_jogador (e, x, y);
+	else if (tem_inimigo(e, x, y)) iluminar_inimigo (e, x, y);
+}
+
 int main() {
     srandom(time(NULL));
 	int x, y;
@@ -194,9 +260,14 @@ int main() {
 		for(x = 0; x < 10; x++)
 			imprime_casa(x, y);
 
+	if (posicao_valida (e.ilumina.x, e.ilumina.y)) imprime_ilumi(e);
+
 	imprime_porta(e);
-	imprime_inimigos(e);
 	imprime_obstaculos(e);
+
+	if (e.fase != 0) e = mover_inimigos(e);
+
+	imprime_inimigos(e);
 	imprime_jogador(e);
 
 	FECHAR_SVG;
