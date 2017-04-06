@@ -127,6 +127,7 @@ ESTADO inicializar() {
 	e.fase = 0;
 	e.score = 0;
 	e.ilumina.x = TAM; e.ilumina.y = TAM;
+	e.PU_Shield = 0;
 	return e;
 }
 
@@ -155,6 +156,7 @@ void imprime_movimento(ESTADO e, int dx, int dy) {
 	novo.jog.x = x; novo.jog.y = y;
 	novo.fase = 1;
 	novo.ilumina.x = TAM; novo.ilumina.y = TAM;
+	novo.PU_Shield--;
 	if (tem_inimigo(e, x, y)) novo = apaga_inimigo(novo, x, y);
 	sprintf(link, "http://localhost/cgi-bin/jogo?%s", estado2str(novo));
 	imprime_quadr_link(x, y, link);
@@ -169,8 +171,8 @@ void imprime_movimentos(ESTADO e) {
 
 void cria_posicao_a_iluminar(ESTADO e, int x, int y) {
 	ESTADO novo = e;
-	if (posicao_igual(novo.ilumina, x, y)) {novo.ilumina.x = TAM; novo.ilumina.y = TAM;}
-	else {novo.ilumina.x = x; novo.ilumina.y = y;}
+	if (posicao_igual(novo.ilumina, x, y)) {novo.ilumina.x = TAM; novo.ilumina.y = TAM; novo.fase = 0;}
+	else {novo.ilumina.x = x; novo.ilumina.y = y; novo.fase = 0;}
 
 	char link[MAX_BUFFER];
 	sprintf(link, "http://localhost/cgi-bin/jogo?%s", estado2str(novo));
@@ -249,6 +251,16 @@ void imprime_ilumi (ESTADO e) {
 	else if (tem_inimigo(e, x, y)) iluminar_inimigo (e, x, y);
 }
 
+void imprime_shield (ESTADO e) {
+	ESTADO novo = e;
+	novo.PU_Shield = 2;
+	char link[MAX_BUFFER];
+	sprintf(link, "http://localhost/cgi-bin/jogo?%s", estado2str(novo));
+
+	IMAGEM(0, TAM, ESCALA, "shield2.png");
+	imprime_quadr_link(0, TAM, link);
+}
+
 int main() {
     srandom(time(NULL));
 	int x, y;
@@ -262,13 +274,14 @@ int main() {
 
 	if (posicao_valida (e.ilumina.x, e.ilumina.y)) imprime_ilumi(e);
 
-	imprime_porta(e);
 	imprime_obstaculos(e);
 
-	if (e.fase != 0) e = mover_inimigos(e);
+	if (e.fase != 0 && e.PU_Shield != 1) e = mover_inimigos(e);
 
 	imprime_inimigos(e);
+	imprime_porta(e);
 	imprime_jogador(e);
+	imprime_shield(e);
 
 	FECHAR_SVG;
 
