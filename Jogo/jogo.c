@@ -289,7 +289,7 @@ void jogo(ESTADO e) {
 
 	imprime_obstaculos(e);
 
-	if (e.fase != 0 && e.PU_Shield != 1) e = mover_inimigos(e);
+	if (e.fase != 0 && e.PU_Shield < 1) e = mover_inimigos(e);
 
 	imprime_inimigos(e);
 	imprime_porta(e);
