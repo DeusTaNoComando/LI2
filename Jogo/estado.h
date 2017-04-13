@@ -45,6 +45,8 @@ typedef struct estado {
 	POSICAO ilumina;
 	/** \brief Power Up Shield ativado */
 	char PU_Shield;
+	/** \brief Número de vidas restantes do jogador */
+	char num_vidas;
 } ESTADO;
 
 /**

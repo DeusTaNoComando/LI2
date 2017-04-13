@@ -53,23 +53,24 @@ void imprime_quadr_link (int x, int y, char* link) {
 void imprime_casa_iluminada (ESTADO e, int x, int y) {
 	if (!posicao_valida(x,y)) return;
 
-	char *cor[] = {"#ee6b55", "#ff9a73", "#ba0a0a", "#fcff00", "#3c4936"};
-	int idx;
 	if (tem_inimigo(e, x, y))
-		idx = 2;
-	else if (tem_porta(e, x, y))
- 		idx = 3;
-	else if (tem_obstaculo(e, x,y))
-		idx = 4;
+		if ((x+y)%2) IMAGEM(x, y, ESCALA, "Ground1_R.png");
+		else IMAGEM(x, y, ESCALA, "Ground2_R.png");
+	else if (posicao_igual(e.porta_saida, x, y))
+		if ((x+y)%2) IMAGEM(x, y, ESCALA, "Ground1_G.png");
+		else IMAGEM(x, y, ESCALA, "Ground2_G.png");
+	else if (tem_obstaculo(e, x,y ) || posicao_igual(e.porta_entrada, x, y))
+		if ((x+y)%2) IMAGEM(x, y, ESCALA, "Ground1_BW.png");
+		else IMAGEM(x, y, ESCALA, "Ground2_BW.png");
 	else
-		idx = (x + y) % 2;
-	QUADRADO(x, y,ESCALA, cor[idx]);
-}
+		if ((x+y)%2) IMAGEM(x, y, ESCALA, "Ground1_L.png");
+		else IMAGEM(x, y, ESCALA, "Ground2_L.png");
+	}
 
 void imprime_casa(int x, int y) {
-	char *cor[] = {"#42993e", "#55de50"};
 	int idx = (x + y) % 2;
-	QUADRADO(x, y,ESCALA, cor[idx]);
+	if (idx == 0) IMAGEM(x, y, ESCALA, "Ground1_Y.png");
+	else IMAGEM(x, y, ESCALA, "Ground2_B.png");
 }
 
 ESTADO inicializar_inimigo(ESTADO e) {
@@ -128,6 +129,7 @@ ESTADO inicializar() {
 	e.score = 0;
 	e.ilumina.x = TAM; e.ilumina.y = TAM;
 	e.PU_Shield = 0;
+	e.num_vidas = 2;
 	return e;
 }
 
@@ -156,7 +158,8 @@ void imprime_movimento(ESTADO e, int dx, int dy) {
 	novo.jog.x = x; novo.jog.y = y;
 	novo.fase = 1;
 	novo.ilumina.x = TAM; novo.ilumina.y = TAM;
-	novo.PU_Shield--;
+	if (novo.PU_Shield > 0) novo.PU_Shield--;
+
 	if (tem_inimigo(e, x, y)) novo = apaga_inimigo(novo, x, y);
 	sprintf(link, "http://localhost/cgi-bin/jogo?%s", estado2str(novo));
 	imprime_quadr_link(x, y, link);
@@ -181,52 +184,51 @@ void cria_posicao_a_iluminar(ESTADO e, int x, int y) {
 
 void imprime_jogador(ESTADO e) {
 	if (!posicao_valida(e.jog.x, e.jog.y)) return;
-	IMAGEM(e.jog.x, e.jog.y, ESCALA, "DwellerN_03.png");
+	IMAGEM(e.jog.x, e.jog.y, ESCALA, "Warrior.png");
 	cria_posicao_a_iluminar(e, e.jog.x, e.jog.y);
 	imprime_movimentos(e);
-}
-
-ESTADO ler_estado(char *args) {
-	if(strlen(args) == 0)
-		return inicializar();
-	return str2estado(args);
 }
 
 void imprime_inimigos(ESTADO e) {
 	int i;
 	for(i = 0; i < (int)e.num_inimigos; i++)
-		IMAGEM(e.inimigo[i].x, e.inimigo[i].y, ESCALA, "Driders_04.png");
+		IMAGEM(e.inimigo[i].x, e.inimigo[i].y, ESCALA, "Goon.png");
 		cria_posicao_a_iluminar(e, e.inimigo[i].x, e.inimigo[i].y);
 }
 
 void imprime_obstaculos(ESTADO e) {
 	int i;
 	for(i = 0; i < e.num_obstaculos; i++)
-		IMAGEM(e.obstaculo[i].x, e.obstaculo[i].y, ESCALA, "lava_pool1.png");
+		IMAGEM(e.obstaculo[i].x, e.obstaculo[i].y, ESCALA, "Lava.png");
 
-}
-
-void desenha_porta(int x,int y) {
-	IMAGEM(x, y, ESCALA, "trapdoor1.png");
 }
 
 void imprime_porta(ESTADO e) {
-			desenha_porta(e.porta_entrada.x, e.porta_entrada.y);
-			desenha_porta(e.porta_saida.x, e.porta_saida.y);
+			IMAGEM(e.porta_entrada.x, e.porta_entrada.y, ESCALA, "Bottom_hole.png");
+			IMAGEM(e.porta_saida.x, e.porta_saida.y, ESCALA, "Hole.png");
 
 			if (abs(e.jog.x - e.porta_saida.x) <= 1 && abs(e.jog.y - e.porta_saida.y) <=1) {
-				imprime_quadr_link (e.porta_saida.x, e.porta_saida.y, "http://localhost/cgi-bin/jogo");
+				char link[MAX_BUFFER];
+				ESTADO novo = inicializar();
+				novo.score = e.score;
+				novo.num_vidas = e.num_vidas;
+				sprintf (link, "http://localhost/cgi-bin/jogo?%s", estado2str(novo));
+
+				imprime_quadr_link (e.porta_saida.x, e.porta_saida.y, link);
 			}
 }
 
 ESTADO mover_inimigos (ESTADO e) {
 	int i;
 	for (i=0; i<(int)e.num_inimigos; i++)
-		if ((abs (e.jog.x - e.inimigo[i].x) == 1 && abs(e.jog.y - e.inimigo[i].y) == 0) || (abs (e.jog.x - e.inimigo[i].x) == 0 && abs(e.jog.y - e.inimigo[i].y) == 1)) {
+		if ((abs (e.jog.x - e.inimigo[i].x) == 1 && abs(e.jog.y - e.inimigo[i].y) == 0 && e.num_vidas == 0) || (abs (e.jog.x - e.inimigo[i].x) == 0 && abs(e.jog.y - e.inimigo[i].y) == 1 && e.num_vidas == 0)) {
 			e.inimigo[i].x = e.jog.x; e.inimigo[i].y = e.jog.y;
 			e.jog.x = TAM; e.jog.y = TAM;
-			break;
+			e.num_vidas--;
 		}
+		else if ((abs (e.jog.x - e.inimigo[i].x) == 1 && abs(e.jog.y - e.inimigo[i].y) == 0) || (abs (e.jog.x - e.inimigo[i].x) == 0 && abs(e.jog.y - e.inimigo[i].y) == 1)) {
+			e.num_vidas--;
+			}
 	return e;
 }
 
@@ -257,20 +259,31 @@ void imprime_shield (ESTADO e) {
 	char link[MAX_BUFFER];
 	sprintf(link, "http://localhost/cgi-bin/jogo?%s", estado2str(novo));
 
-	IMAGEM(0, TAM, ESCALA, "shield2.png");
+	IMAGEM(0, TAM, ESCALA, "Shield.png");
 	imprime_quadr_link(0, TAM, link);
 }
 
-int main() {
-    srandom(time(NULL));
-	int x, y;
-	ESTADO e = ler_estado(getenv("QUERY_STRING"));
+void imprime_sword (ESTADO e) {
+	IMAGEM(1, TAM, ESCALA, "Sword.png");
+}
 
-	COMECAR_HTML;
-	ABRIR_SVG(600, 600);
-	for(y = 0; y < 10; y++)
-		for(x = 0; x < 10; x++)
+void imprime_vidas (ESTADO e) {
+	int i;
+	for (i=0; i<=e.num_vidas; i++) IMAGEM((5+i), TAM, ESCALA, "Heart3.png");
+	for (; i<5; i++) IMAGEM((5+i), TAM, ESCALA, "Heart_Blocked.png");
+}
+
+void jogo(ESTADO e) {
+	int x, y;
+
+	for(y = 0; y < TAM; y++)
+		for(x = 0; x < TAM; x++)
 			imprime_casa(x, y);
+
+	for (x=0; x < TAM; x++) {
+		if (((x+y)%2) == 0) IMAGEM(x, y, ESCALA, "Ground1_LY.png");
+		else IMAGEM(x, y, ESCALA, "Ground2_LY.png");
+	}
 
 	if (posicao_valida (e.ilumina.x, e.ilumina.y)) imprime_ilumi(e);
 
@@ -281,7 +294,51 @@ int main() {
 	imprime_inimigos(e);
 	imprime_porta(e);
 	imprime_jogador(e);
+
 	imprime_shield(e);
+	imprime_sword(e);
+	imprime_vidas(e);
+
+}
+
+void imprimir_link_jogar() {
+	char link[MAX_BUFFER];
+	sprintf(link, "http://localhost/cgi-bin/jogo?%s", estado2str(inicializar()));
+
+	int c;
+	for (c=0; c<6; c++) {
+		if (((c+2)+4)%2) IMAGEM((c+2), 4, ESCALA, "Ground1_LY.png");
+		else IMAGEM((c+2), 4, ESCALA, "Ground2_LY.png");
+	}
+
+	ABRIR_LINK(link);
+	printf("<image x=%d y=%d width=%d height=%d xlink:href=%s />\n", 3*ESCALA , 4*ESCALA, 4*ESCALA, ESCALA, "http://localhost/images/Jogar.png");
+	FECHAR_LINK;
+}
+
+void interface() {
+	int l,c;
+	for (l=0; l<TAM; l++)
+		for (c=0; c<=TAM; c++)
+			if ((c+l)%2) IMAGEM(l, c, ESCALA, "Ground1_B.png");
+			else IMAGEM(l, c, ESCALA, "Ground2_B.png");
+
+	imprimir_link_jogar();
+}
+
+void ler_estado(char *args) {
+	if(strlen(args) == 0)
+		return interface();
+	return jogo(str2estado(args));
+}
+
+int main() {
+    srandom(time(NULL));
+
+	COMECAR_HTML;
+	ABRIR_SVG(600, 600);
+
+	ler_estado(getenv("QUERY_STRING"));
 
 	FECHAR_SVG;
 
