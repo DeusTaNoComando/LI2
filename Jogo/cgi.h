@@ -52,6 +52,12 @@ Macros úteis para gerar CGIs
 #define QUADRADO_LINK(X, Y, ESCALA)			printf("<rect x=%d y=%d width=%d height=%d fill-opacity=0.0 />\n", \
 												ESCALA * X, ESCALA* Y, ESCALA, ESCALA)
 
+#define HEX_LINK(X, Y, ESCALA)			printf("<image x=%d y=%d width=%d height=%d xlink:href=%s fill-opacity=0.0/>\n", \
+												ESCALA * X, ESCALA* Y, ESCALA, ESCALA, "http://localhost/images/Hex1.png")
+
+#define IMAGEM_DESV(X, Y, ESCALA, DESVIO, FICHEIRO)		printf("<image x=%d y=%d scale=3 xlink:href=%s />\n", \
+												ESCALA * X + DESVIO, ESCALA * Y - 17 * Y, IMAGE_PATH FICHEIRO)
+
 /**
 \brief Macro para abrir um link
 @param link O caminho para o link

@@ -12,6 +12,9 @@ Definição do estado e das funções que convertem estados em strings e vice-ve
 /** \brief O nº máximo de obstáculos */
 #define MAX_OBSTACULOS		100
 
+/** \brief O nº máximo de items a apararecer por nível */
+#define MAX_ITEMS 3
+
 /**
 \brief Estrutura que armazena uma posição
 */
@@ -28,6 +31,8 @@ typedef struct estado {
 	POSICAO jog;
 	/** \brief O nº de inimigos */
 	char num_inimigos;
+	/** \brief O nº de inimigos que consegue atingir o jogador de longe*/
+	char num_inimigos_longe;
 	/** \brief O nº de obstáculos */
 	char num_obstaculos;
 	/** \brief Array com a posição dos inimigos */
@@ -45,8 +50,23 @@ typedef struct estado {
 	POSICAO ilumina;
 	/** \brief Power Up Shield ativado */
 	char PU_Shield;
+	/** \brief Power Up Sword ativado */
+	char PU_Sword;
+	/** \brief Posicao da espada atirada */
+	POSICAO espada;
 	/** \brief Número de vidas restantes do jogador */
 	char num_vidas;
+	/** \brief Mana restante do jogador */
+	char num_mana;
+	/** \brief Stamina restante do jogador */
+	char num_stamina;
+	/** \brief O nº de items */
+	char num_items;
+	/** \brief Tipos do items que dão 'spawn' a cada nível */
+	char tipo_item[MAX_ITEMS];
+	/** \brief Posições dos items */
+	POSICAO items[MAX_ITEMS];
+
 } ESTADO;
 
 /**
