@@ -37,7 +37,7 @@ Macros úteis para gerar CGIs
 @param FICHEIRO O caminho para o link do ficheiro
 */
 #define IMAGEM(X, Y, ESCALA, FICHEIRO)		printf("<image x=%d y=%d width=%d height=%d xlink:href=%s />\n", \
-												ESCALA * X, ESCALA* Y, ESCALA, ESCALA, IMAGE_PATH FICHEIRO)
+												ESCALA * X, ESCALA* (Y+1), ESCALA, ESCALA, IMAGE_PATH FICHEIRO)
 
 /**
 \brief Macro para criar um quadrado
@@ -50,7 +50,10 @@ Macros úteis para gerar CGIs
 												ESCALA * X, ESCALA* Y, ESCALA, ESCALA, COR)
 
 #define QUADRADO_LINK(X, Y, ESCALA)			printf("<rect x=%d y=%d width=%d height=%d fill-opacity=0.0 />\n", \
-												ESCALA * X, ESCALA* Y, ESCALA, ESCALA)
+												ESCALA * X, ESCALA* (Y+1), ESCALA, ESCALA)
+
+#define TEXTO(TAM, TEXTO) 			printf("<p><font size=%s>%s</font></p>\n", \
+												TAM, TEXTO)
 
 #define HEX_LINK(X, Y, ESCALA)			printf("<image x=%d y=%d width=%d height=%d xlink:href=%s fill-opacity=0.0/>\n", \
 												ESCALA * X, ESCALA* Y, ESCALA, ESCALA, "http://localhost/images/Hex1.png")
