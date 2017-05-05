@@ -161,7 +161,8 @@ ESTADO inicializar_tipo_items (ESTADO e) {
 }
 
 ESTADO inicializar() {
-	ESTADO e = {{0}};
+	ESTADO e = {0};
+	sprintf(e.letra, "%s", "AAAAAA");
 	e.porta_entrada.x = 9;
 	e.porta_entrada.y = 9;
 	e.porta_saida.x = 0;
@@ -172,6 +173,7 @@ ESTADO inicializar() {
 	e = inicializar_posicoes(e, 20, 1);
 	e.num_inimigos_longe = 4;
 	e.ilumina.x = TAM; e.ilumina.y = TAM;
+	e.nivel = 1;
 	e.espada.x = TAM; e.espada.y = TAM;
 	e.Lava_on = 1;
 	e.num_vidas = 3;
@@ -257,13 +259,13 @@ ESTADO kill_replace (ESTADO e, int dx, int dy) {
 	int x = e.jog.x + dx;
 	int y = e.jog.y + dy;
 
-	if (e.PU_Sword == 1) {
-		e.PU_Sword = 0;
+	if (e.PU_Sword == 2) {
+		e.PU_Sword = 1;
 		e = kill_streak(e, dx, dy);
 	}
 	else {
 		if (tem_inimigo(e, x, y)) e = apaga_inimigo(e, x, y);
-		else if (tem_espada(e, x, y)) {e.espada.x = TAM; e.espada.y = TAM;}
+		else if (tem_espada(e, x, y)) {e.espada.x = TAM; e.espada.y = TAM; e.PU_Sword=0;}
 		else if (tem_item(e, x, y)) e = recolhe_item(e, x, y);
 		e.jog.x = x; e.jog.y = y;
 	}
@@ -301,7 +303,7 @@ void imprime_movimentos(ESTADO e) {
 			for (dy = 0; dy < TAM; dy++)
 				if (dx != 0 || dy != 0) imprime_movimento (e, dx - e.jog.x, dy - e.jog.y);
 	}
-	else if (e.PU_Sword) {
+	else if (e.PU_Sword == 2) {
 		dy = 0;
 		for(dx = -2; dx <= 2; dx++) if (dx!=0) imprime_movimento(e, dx, dy);
 		dx = 0;
@@ -322,12 +324,8 @@ void cria_posicao_a_iluminar(ESTADO e, int x, int y) {
 	imprime_quadr_link(x, y, novo);
 }
 
-void game_over(ESTADO e) {
-	return;
-}
-
 void imprime_jogador(ESTADO e) {
-	if (!posicao_valida(e.jog.x, e.jog.y)) {game_over(e); return;}
+	if (!posicao_valida(e.jog.x, e.jog.y)) return;
 	IMAGEM(e.jog.x, e.jog.y, ESCALA, "Goblin.png");
 	cria_posicao_a_iluminar(e, e.jog.x, e.jog.y);
 	imprime_movimentos(e);
@@ -360,10 +358,12 @@ void imprime_porta(ESTADO e) {
 
 		if (((abs(e.jog.x - e.porta_saida.x) <= 1 && abs(e.jog.y - e.porta_saida.y) <=1) || e.teleport_on) && !posicao_valida(e.espada.x, e.espada.y)) {
 			ESTADO novo = inicializar();
-			novo.score = e.score;
+			novo.score = e.score + 5;
+			novo.nivel = e.nivel + 1;
 			novo.num_vidas = e.num_vidas;
 			novo.num_stamina = e.num_stamina;
 			novo.num_mana = e.num_mana;
+			novo.PU_Scroll_Mana = e.PU_Scroll_Mana;
 
 			imprime_quadr_link (e.porta_saida.x, e.porta_saida.y, novo);
 		}
@@ -379,6 +379,7 @@ ESTADO mover_inimigos (ESTADO e) {
 			e.num_mana = 0;
 			e.num_stamina = 0;
 			e.jog.x = TAM; e.jog.y = TAM;
+			e.game_over = 1;
 		}
 		else if (((abs (e.jog.x - e.inimigo[i].x) == 1 && abs(e.jog.y - e.inimigo[i].y) == 0) || (abs (e.jog.x - e.inimigo[i].x) == 0 && abs(e.jog.y - e.inimigo[i].y) == 1)) && !tem_obstaculo(e, e.jog.x, e.jog.y)) {
 			e.num_vidas--;
@@ -396,7 +397,7 @@ void iluminar_inimigo (ESTADO e, int x, int y) {
 void iluminar_jogador (ESTADO e, int x, int y) {
 	int dx, dy;
 
-	if (e.PU_Sword == 1) {
+	if (e.PU_Sword == 2) {
 		dy = 0;
 		for(dx = -2; dx <= 2; dx++) if (dx!=0) imprime_casa_iluminada(e, x + dx, y + dy, 0);
 		dx = 0;
@@ -447,7 +448,7 @@ void imprime_ilumi (ESTADO e) {
 
 void imprime_shield (ESTADO e) {
 
-	if (e.num_stamina < 1 && e.PU_Shield < 2) {IMAGEM(0, (TAM+1), ESCALA, "X.png"); return;}
+	if (e.num_stamina <= 1 && e.PU_Shield < 2) {IMAGEM(0, (TAM+1), ESCALA, "X.png"); return;}
 	else if (e.PU_Shield == 2) IMAGEM(0, (TAM+1), ESCALA, "X.png");
 	else IMAGEM(0, (TAM + 1), ESCALA, "Shield_2.png");
 
@@ -465,18 +466,18 @@ void imprime_sword (ESTADO e) {
 
 	if (e.PU_Shield == 2) {novo.PU_Shield = 0; novo.num_stamina += 2;}
 
-	if (e.num_stamina < 1 || e.PU_Sword || posicao_valida(e.espada.x, e.espada.y)) {IMAGEM(0, TAM, ESCALA, "X.png");}
+	if ((e.num_stamina < 1 && e.PU_Shield != 2)|| e.PU_Sword != 0 || posicao_valida(e.espada.x, e.espada.y)) {IMAGEM(0, TAM, ESCALA, "X.png");}
 	else IMAGEM(0, TAM, ESCALA, "Mace.png");
 
-	if (e.PU_Sword == 0 && e.espada.x == TAM && e.espada.y == TAM) {
-		novo.PU_Sword = 1;
+	if (e.PU_Sword == 0 && e.espada.x == TAM && e.espada.y == TAM && (e.num_stamina > 0 || (e.num_stamina == 0 && e.PU_Shield == 2)) ) {
+		novo.PU_Sword = 2;
 		novo.PU_Shield = 1;
 		novo.num_stamina --;
 
 		imprime_quadr_link (0, TAM, novo);
 	}
 	else if (e.espada.x != TAM && e.espada.y != TAM) IMAGEM (e.espada.x, e.espada.y, ESCALA, "Mace.png");
-	else {
+	else if (e.PU_Sword == 2) {
 		novo.PU_Sword = 0;
 		novo.PU_Shield = 1;
 		novo.num_stamina ++;
@@ -503,9 +504,9 @@ void obsidian (ESTADO *e) {
 
 void imprime_scroll (ESTADO e) {
 	if (e.PU_Shield == 2) {e.PU_Shield = 0; e.num_stamina += 2;}
-	else if (e.PU_Sword) {e.PU_Sword = 0; e.num_stamina++;}
+	else if (e.PU_Sword == 2) {e.PU_Sword = 0; e.num_stamina++;}
 
-	if (e.PU_Scroll_Mana != 0 && e.PU_Scroll != 1 && e.num_mana >= e.PU_Scroll_Mana) {
+	if (e.PU_Scroll_Mana != 0 && e.PU_Scroll == 0 && e.num_mana >= e.PU_Scroll_Mana) {
 		IMAGEM(0, 12, ESCALA, "Scroll.png");
 
 		e.PU_Scroll = e.PU_Scroll_Mana;
@@ -515,6 +516,7 @@ void imprime_scroll (ESTADO e) {
 		else teleport(&e);
 
 		e.num_mana -=  e.PU_Scroll_Mana;
+		e.PU_Scroll_Mana = 0;
 
 		imprime_quadr_link(0, 12, e);
 	}
@@ -553,7 +555,28 @@ void imprime_items (ESTADO e) {
 	}
 }
 
-void jogo(ESTADO e) {
+void imprime_texto(ESTADO e) {
+	TEXTO(1, -1, ESCALA, 35, "#583a25", "Save");
+
+	char score[MAX_BUFFER];
+	sprintf(score, "Sc:%d", e.score);
+
+	char level[MAX_BUFFER];
+	sprintf(level, "L:%d", (int)e.nivel);
+
+	TEXTO_END(10, -1, ESCALA, 35, "#583a25", score);
+	TEXTO_END(7, -1, ESCALA, 35, "#583a25", level);
+
+	TEXTO(1, 10, ESCALA, 35, "#583a25", "Club");
+	TEXTO(1, 11, ESCALA, 35, "#583a25", "Shield");
+	TEXTO(1, 12, ESCALA, 35, "#583a25", "Scroll");
+
+	TEXTO(4, 10, ESCALA, 35, "#583a25", "L:");
+	TEXTO(4, 11, ESCALA, 35, "#583a25", "S:");
+	TEXTO(4, 12, ESCALA, 35, "#583a25", "M:");
+}
+
+void imprime_canvas() {
 	int x, y;
 
 	for (y = -1; y < 0; y++)
@@ -571,13 +594,83 @@ void jogo(ESTADO e) {
 			if (((x+y)%2) == 0) IMAGEM(x, y, ESCALA, "Ground1_LY.png");
 			else IMAGEM(x, y, ESCALA, "Ground2_LY.png");
 		}
+}
+
+void imprime_mapa(ESTADO e) {
+	IMAGEM(0, -1, ESCALA, "Map.png");
+}
+
+void imprime_botao(char* link, int y, char* texto) {
+
+	ABRIR_LINK(link);
+
+	int c;
+	for (c=1; c<9; c++) {
+		if ((c+y)%2) IMAGEM(c, y, ESCALA, "Ground1_B.png");
+		else IMAGEM(c, y, ESCALA, "Ground2_B.png");
+	}
+
+	TEXTO_MID(5, y, ESCALA, 40, "#e4a91f", texto);
+
+	FECHAR_LINK;
+}
+
+void imprime_letras(ESTADO e) {
+	int i;
+
+	for (i=0; i<6; i++) {
+			ESTADO novo = e;
+
+			char letra[1];
+			sprintf(letra, "%c", novo.letra[i]);
+			TEXTO((2+i), 6, ESCALA, 40, "#583a25", letra);
+
+			IMAGEM((2+i), 5, ESCALA, "Up.png");
+			IMAGEM((2+i), 7, ESCALA, "Down.png");
+
+			if (novo.letra[i] != 'Z') novo.letra[i]++;
+			else novo.letra[i] = 'A';
+			imprime_quadr_link(2+i, 5, novo);
+
+			if (novo.letra[i] != 'A') novo.letra[i]-=2;
+			else novo.letra[i] = 'X';
+			imprime_quadr_link(2+i, 7, novo);
+		}
+}
+
+void game_over(ESTADO e) {
+	int y,x;
+	for (y=-1; y<TAM + 3; y++)
+		for (x=0; x<TAM; x++)
+			if ((x+y)%2) IMAGEM(x, y, ESCALA, "Ground1_LY.png");
+			else IMAGEM(x, y, ESCALA, "Ground2_LY.png");
+
+	TEXTO(1, 1, ESCALA, 110, "#583a25", "GAME");
+	TEXTO_END(9, 3, ESCALA, 110, "#583a25", "OVER");
+
+	imprime_letras(e);
+
+	imprime_botao("http://localhost/cgi-bin/jogo?", 9, "Main Menu");
+
+	char link[MAX_BUFFER];
+	sprintf(link, "http://localhost/cgi-bin/jogo?%s", estado2str(inicializar()));
+	imprime_botao(link, 11, "Retry");
+}
+
+void jogo(ESTADO e) {
+
+	if (e.fase != 0 && e.PU_Shield < 1) e = mover_inimigos(e);
+
+	if (e.game_over) {game_over(e); return;}
+
+	imprime_canvas();
+	imprime_texto(e);
 
 	if (posicao_valida (e.ilumina.x, e.ilumina.y)) imprime_ilumi(e);
 
 	imprime_obstaculos(e);
 
-	if (e.fase != 0 && e.PU_Shield < 1) e = mover_inimigos(e);
-
+	imprime_mapa(e);
 	imprime_inimigos(e);
 	imprime_porta(e);
 	imprime_sword(e);
@@ -590,21 +683,6 @@ void jogo(ESTADO e) {
 
 }
 
-void imprimir_link_jogar() {
-	char link[MAX_BUFFER];
-	sprintf(link, "http://localhost/cgi-bin/jogo?%s", estado2str(inicializar()));
-
-	int c;
-	for (c=0; c<6; c++) {
-		if (((c+2)+4)%2) IMAGEM((c+2), 4, ESCALA, "Ground1_B.png");
-		else IMAGEM((c+2), 4, ESCALA, "Ground2_B.png");
-	}
-
-	ABRIR_LINK(link);
-	printf("<image x=%d y=%d width=%d height=%d xlink:href=%s />\n", 3*ESCALA , 4*ESCALA, 4*ESCALA, ESCALA, "http://localhost/images/Jogar.png");
-	FECHAR_LINK;
-}
-
 void interface() {
 	int y,x;
 	for (y=-1; y<TAM + 3; y++)
@@ -612,19 +690,118 @@ void interface() {
 			if ((x+y)%2) IMAGEM(x, y, ESCALA, "Ground1_LY.png");
 			else IMAGEM(x, y, ESCALA, "Ground2_LY.png");
 
-	imprimir_link_jogar();
+	TEXTO_MID(5, 1, ESCALA, 110, "#583a25", "GOBLIN");
+	TEXTO_MID(5, 3, ESCALA, 110, "#583a25", "N'BONES");
+
+	char link[MAX_BUFFER];
+	sprintf(link, "http://localhost/cgi-bin/jogo?%s", estado2str(inicializar()));
+
+	imprime_botao(link, 5, "New Game");
+	imprime_botao("http://localhost/cgi-bin/jogo?", 7, "Continue Game");
+	imprime_botao("http://localhost/cgi-bin/jogo?Leaderboards", 9, "Leaderboards");
+	imprime_botao("http://localhost/cgi-bin/jogo?Help", 11, "Help");
+}
+
+void imprime_background(char* texto) {
+	int y,x;
+	for (y=-1; y<TAM + 3; y++)
+		for (x=0; x<TAM; x++)
+			if ((x+y)%2) IMAGEM(x, y, ESCALA, "Ground1_LY.png");
+			else IMAGEM(x, y, ESCALA, "Ground2_LY.png");
+
+	for (x=1; x<9; x++) {
+		if ((x+1)%2) IMAGEM(x, 0, ESCALA, "Ground1_B.png");
+		else IMAGEM(x, 0, ESCALA, "Ground2_B.png");
+	}
+
+	TEXTO_MID(5, 0, ESCALA, 40, "#e4a91f", texto);
+}
+
+void imprime_botao_ajuda(int x, int y) {
+	char link[MAX_BUFFER];
+
+	if (y==4) {
+		if (x==3) sprintf(link, "http://localhost/cgi-bin/jogo?Help_%s", "Goblin");
+		else if (x==5) sprintf(link, "http://localhost/cgi-bin/jogo?Help_%s", "Goon");
+		else if (x==7) sprintf(link, "http://localhost/cgi-bin/jogo?Help_%s", "Necromancer");
+	}
+	else if (y==6) {
+		if (x==3) sprintf(link, "http://localhost/cgi-bin/jogo?Help_%s", "Hearts");
+		else if (x==7) sprintf(link, "http://localhost/cgi-bin/jogo?Help_%s", "Potions");
+	}
+	else if (y==8) {
+		if (x==3) sprintf(link, "http://localhost/cgi-bin/jogo?Help_%s", "Club");
+		else if (x==5) sprintf(link, "http://localhost/cgi-bin/jogo?Help_%s", "Shield");
+		else if (x==7) sprintf(link, "http://localhost/cgi-bin/jogo?Help_%s", "Scroll");
+	}
+
+	ABRIR_LINK(link);
+	QUADRADO_LINK(x, y, ESCALA);
+	FECHAR_LINK;
+}
+
+void help() {
+
+	imprime_background("Help");
+
+	int x,y;
+	for (y = 4; y <= 8; y+= 2)
+		for (x = 3; x <= 7; x += 2)
+			if (x != 5 || y != 6) {
+				if ((x+y)%2) IMAGEM(x, y, ESCALA, "Ground1_B.png");
+				else IMAGEM(x, y, ESCALA, "Ground2_B.png");
+			}
+
+	TEXTO(1, 2, ESCALA, 35, "#583a25", "Click the items below:");
+	TEXTO(1, 4, ESCALA, 35, "#583a25", "Ch:");
+	TEXTO(1, 6, ESCALA, 35, "#583a25", "H:");
+	TEXTO(5, 6, ESCALA, 35, "#583a25", "P:");
+	TEXTO(1, 8, ESCALA, 35, "#583a25", "A:");
+
+	IMAGEM(3, 4, ESCALA, "Goblin.png");
+	IMAGEM(5, 4, ESCALA, "Goon.png");
+	IMAGEM(7, 4, ESCALA, "Necromancer.png");
+	IMAGEM(3, 6, ESCALA, "Heart_Red.png");
+	IMAGEM(7, 6, ESCALA, "Potion_Red.png");
+	IMAGEM(3, 8, ESCALA, "Mace.png");
+	IMAGEM(5, 8, ESCALA, "Shield_2.png");
+	IMAGEM(7, 8, ESCALA, "Scroll.png");
+
+	for (y = 4; y <= 8; y+= 2)
+		for (x = 3; x <= 7; x += 2)
+			if (x != 5 || y != 6) imprime_botao_ajuda(x, y);
+
+	imprime_botao("http://localhost/cgi-bin/jogo?", 11, "Main Menu");
+}
+
+void leaderboards() {
+	imprime_background("Leaderboards");
+
+	imprime_botao("http://localhost/cgi-bin/jogo?", 11, "Main Menu");
+}
+
+void ajudas(char* args) {
+	char tipo[12];
+	sscanf(args, "Help_%s", tipo);
+
+	imprime_background(tipo);
 }
 
 void ler_estado(char *args) {
-	if(strlen(args) == 0)
-		return interface();
-	return jogo(str2estado(args));
+	if(strlen(args) == 0) interface();
+	else if(strcmp(args, "Leaderboards") == 0) leaderboards();
+	else if (strcmp(args, "Help") == 0) help();
+	else if (strlen(args) <= 17) ajudas(args);
+	else jogo(str2estado(args));
 }
 
 int main() {
     srandom(time(NULL));
 
 	COMECAR_HTML;
+
+	FONTE;
+
 	ABRIR_SVG(600, 600);
 
 	ler_estado(getenv("QUERY_STRING"));

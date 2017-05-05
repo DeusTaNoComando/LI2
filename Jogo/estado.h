@@ -27,6 +27,8 @@ typedef struct posicao {
 \brief Estrutura que armazena o estado do jogo
 */
 typedef struct estado {
+	/** \brief Nome do jogador */
+	char letra[6];
 	/** \brief A posição do jogador */
 	POSICAO jog;
 	/** \brief O nº de inimigos */
@@ -39,13 +41,17 @@ typedef struct estado {
 	POSICAO inimigo[MAX_INIMIGOS];
 	/** \brief Array com a posição dos obstáculos */
 	POSICAO obstaculo[MAX_OBSTACULOS];
-	/** \brief Posciçoes das portas */
+	/** \brief Poscições das portas */
 	POSICAO porta_entrada;
 	POSICAO porta_saida;
+	/** \brief Decisor se se pode jogar ou não */
+	char game_over;
 	/** \brief Fase de jogo, usado para saber se é o turno do jogador e para as animações */
 	char fase;
 	/** \brief Score do jogador */
-	char score;
+	int score;
+	/** \brief Nivel do jogador */
+	int nivel;
 	/** \brief Posição a iluminar */
 	POSICAO ilumina;
 	/** \brief Power Up Shield ativado */

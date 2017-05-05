@@ -40,26 +40,46 @@ Macros úteis para gerar CGIs
 												ESCALA * X, ESCALA* (Y+1), ESCALA, ESCALA, IMAGE_PATH FICHEIRO)
 
 /**
-\brief Macro para criar um quadrado
+\brief Macro para criar um quadrado invisivel que serve de link
 @param X A coordenada X do canto superior esquerdo
 @param Y A coordenada Y do canto superior esquerdo
 @param ESCALA A escala do quadrado
-@param COR A cor de preenchimento do quadrado
 */
-#define QUADRADO(X, Y, ESCALA, COR)			printf("<rect x=%d y=%d width=%d height=%d fill=%s />\n", \
-												ESCALA * X, ESCALA* Y, ESCALA, ESCALA, COR)
 
 #define QUADRADO_LINK(X, Y, ESCALA)			printf("<rect x=%d y=%d width=%d height=%d fill-opacity=0.0 />\n", \
 												ESCALA * X, ESCALA* (Y+1), ESCALA, ESCALA)
 
-#define TEXTO(TAM, TEXTO) 			printf("<p><font size=%s>%s</font></p>\n", \
-												TAM, TEXTO)
+/**
+\brief Macros para introduzir texto de jogo
+(Com devidos ajustes relativos à sua posição relativa)
+@param X A coordenada X do canto superior esquerdo
+@param Y A coordenada Y do canto superior esquerdo
+@param ESCALA A escala dos quadrados para ajudar à colocação do texto
+@param TAM O tamanho da letra
+@param COR A cor da letra
+@param TEXTO O texto a inserir
+*/
 
-#define HEX_LINK(X, Y, ESCALA)			printf("<image x=%d y=%d width=%d height=%d xlink:href=%s fill-opacity=0.0/>\n", \
-												ESCALA * X, ESCALA* Y, ESCALA, ESCALA, "http://localhost/images/Hex1.png")
+#define TEXTO(X, Y, ESCALA, TAM, COR, TEXTO) 			printf("<text x=\"%d\" y=\"%d\" font-size=\"%d\" fill=\"%s\" text-anchor=\"start\" font-family= 'VT323' >%s</text> \n", \
+												X * ESCALA + 10, ((Y + 1) * ESCALA) + 30, TAM, COR, TEXTO)
 
-#define IMAGEM_DESV(X, Y, ESCALA, DESVIO, FICHEIRO)		printf("<image x=%d y=%d scale=3 xlink:href=%s />\n", \
-												ESCALA * X + DESVIO, ESCALA * Y - 17 * Y, IMAGE_PATH FICHEIRO)
+#define TEXTO_END(X, Y, ESCALA, TAM, COR, TEXTO) 			printf("<text x=\"%d\" y=\"%d\" font-size=\"%d\" fill=\"%s\" text-anchor=\"end\" font-family= 'VT323' >%s</text> \n", \
+												X * ESCALA - 10, ((Y + 1) * ESCALA) + 30, TAM, COR, TEXTO)
+
+#define TEXTO_MID(X, Y, ESCALA, TAM, COR, TEXTO) 	printf("<text x=\"%d\" y=\"%d\" font-size=\"%d\" fill=\"%s\" text-anchor=\"middle\" font-family= 'VT323' >%s</text> \n", \
+												X * ESCALA, ((Y + 1) * ESCALA) + 32, TAM, COR, TEXTO)
+
+/**
+\brief Macro para a ir buscar o tipo de letra
+*/
+
+#define FONTE { printf("<style>\n"); printf("@import url('https://fonts.googleapis.com/css?family=VT323');\n"); printf("</style>\n");}
+
+/**
+\brief Macro para a inicialização das cookies
+*/
+
+#define COOKIE(NOME) printf("<meta http-equiv=\"set-cookie\" content=\"Name=%s; expires=Sat, 01-July-2017 12:00:00 GMT; domain=.http://localhost/cgi-bin/jogo; path=/\">", NOME);
 
 /**
 \brief Macro para abrir um link
