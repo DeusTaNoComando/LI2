@@ -60,10 +60,8 @@ typedef struct estado {
 	char PU_Sword;
 		/** \brief Posicao da espada atirada */
 	POSICAO espada;
-	/** \brief Power Up Scroll ativado */
+	/** \brief Power Up Scroll permitido de usar e com o gasto de mana indicado */
 	char PU_Scroll;
-	/** \brief Tipo de feitiço à custa da mana que gasta */
-	char PU_Scroll_Mana;
 	/** \brief Diz se a lava está seca ou não, ou seja, se o jogador pode andar por cima dos obstáculos */
 	char Lava_on;
 	/** \brief Diz se o jogador pode se mover para qualquer casa, ou seja, teletranspotar-se */

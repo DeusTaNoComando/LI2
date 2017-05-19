@@ -3,6 +3,8 @@
 #include <time.h>
 #include "cgi.h"
 #include "estado.h"
+#include "ler.h"
+#include "escrever.h"
 
 #define MAX_BUFFER		10240
 #define TAM				10
@@ -25,7 +27,7 @@ int tem_item (ESTADO e, int x, int y) {
 }
 
 int tem_porta(ESTADO e, int x, int y) {
-	return (posicao_igual(e.porta_entrada, x, y) || posicao_igual(e.porta_saida, x, y));
+	return (posicao_igual(e.porta_saida, x, y));
 }
 
 int tem_jogador(ESTADO e, int x, int y) {
@@ -65,8 +67,11 @@ int posicao_ocupada(ESTADO e, int x, int y) {
 }
 
 void imprime_quadr_link (int x, int y, ESTADO e) {
+	char nome[7] = {0};
+	strncpy(nome, e.letra, 6);
+
 	char link[MAX_BUFFER];
-	sprintf(link, "http://localhost/cgi-bin/jogo?%s", estado2str(e));
+	sprintf(link, "http://localhost/cgi-bin/jogo?%s,%d,%d", nome, x, y);
 
 	ABRIR_LINK(link);
 	QUADRADO_LINK(x, y, ESCALA);
@@ -188,146 +193,145 @@ ESTADO inicializar() {
 void recolhe_scroll (ESTADO * e, int x, int y) {
 	int tipo = random() % 10;
 
-	if (tipo < 5) (*e).PU_Scroll_Mana = 1;
-	else if (tipo < 8) (*e).PU_Scroll_Mana = 2;
-	else (*e).PU_Scroll_Mana = 5;
+	if (tipo < 5) (*e).PU_Scroll = 1;
+	else if (tipo < 8) (*e).PU_Scroll = 2;
+	else (*e).PU_Scroll = 5;
 }
 
-ESTADO recolhe_item(ESTADO e, int x, int y) {
+void recolhe_item(ESTADO *e, int x, int y) {
 	int i;
-	for (i=0; e.items[i].x != x && e.items[i].x != x; i++);
+	for (i=0; e->items[i].x != x || e->items[i].y != y; i++);
 
-	if (e.tipo_item[i] == 0 && e.num_vidas < 5) e.num_vidas++;
-	else if (e.tipo_item[i] == 1 && e.num_stamina < 5) e.num_stamina++;
-	else if (e.tipo_item[i] == 2 && e.num_mana < 5 ) e.num_mana++;
-	else recolhe_scroll(&e, x, y);
+	if (e->tipo_item[i] == 0 && e->num_vidas < 5) e->num_vidas++;
+	else if (e->tipo_item[i] == 1 && e->num_stamina < 5) e->num_stamina++;
+	else if (e->tipo_item[i] == 2 && e->num_mana < 5 ) e->num_mana++;
+	else if (e->tipo_item[i] == 3) recolhe_scroll(e, x, y);
 
 	int j = i;
-	for (; i < e.num_items; i++) {e.items[i].x = e.items[i+1].x; e.items[i].y = e.items[i+1].y;}
-	for (i = j; i < e.num_items; i++) e.tipo_item[i] = e.tipo_item[i+1];
+	for (; i < e->num_items; i++) {e->items[i].x = e->items[i+1].x; e->items[i].y = e->items[i+1].y;}
+	for (i = j; i < e->num_items; i++) e->tipo_item[i] = e->tipo_item[i+1];
 
-	e.num_items--;
+	e->num_items--;
 
-	e.score++;
-
-	return e;
+	e->score++;
 }
 
-ESTADO apaga_inimigo (ESTADO e, int x, int y) {
+void apaga_inimigo (ESTADO *e, int x, int y) {
 	int i;
-	for (i=0; i < (int)e.num_inimigos; i++)
-		if (e.inimigo[i].x == x && e.inimigo[i].y == y) {
-				if (tem_inim_longe(e, x, y)) {e.num_inimigos_longe--; e.score++;}
-				for (; i < (int)e.num_inimigos; i ++) e.inimigo[i] = e.inimigo[i+1];
-				e.inimigo[i].x = 0; e.inimigo[i].y = 0;
-				e.num_inimigos--;
-				e.score++;
+	for (i=0; i < (int)e->num_inimigos; i++)
+		if (e->inimigo[i].x == x && e->inimigo[i].y == y) {
+				if (tem_inim_longe(*e, x, y)) {e->num_inimigos_longe--; e->score++;}
+				for (; i < (int)e->num_inimigos; i ++) e->inimigo[i] = e->inimigo[i+1];
+				e->inimigo[i].x = 0; e->inimigo[i].y = 0;
+				e->num_inimigos--;
+				e->score++;
 		}
-	return e;
 }
 
-ESTADO kill_line (ESTADO e, int coord_fix, int d) {
+void kill_line (ESTADO *e, int coord_fix, int d) {
 	int dx = 0, dy = 0, inc;
 
 	if (d > 0) inc = 1;
 	else inc = -1;
 
-	if (coord_fix == 0) {e.espada.x = e.jog.x; dy = d; e = apaga_inimigo(e, e.jog.x, (e.jog.y + dy - inc));}
-	else {e.espada.y = e.jog.y; dx = d; e = apaga_inimigo(e, (e.jog.x + dx - inc), e.jog.y);}
+	if (coord_fix == 0) {e->espada.x = e->jog.x; dy = d; apaga_inimigo(e, e->jog.x, (e->jog.y + dy - inc));}
+	else {e->espada.y = e->jog.y; dx = d; apaga_inimigo(e, (e->jog.x + dx - inc), e->jog.y);}
 
-	while (tem_inimigo(e, (e.jog.x + dx), (e.jog.y + dy))) {
-		e = apaga_inimigo(e, (e.jog.x + dx), (e.jog.y + dy));
-		if (coord_fix == 0) {e.espada.y = e.jog.y + dy; dy += inc;}
-		else {e.espada.x = e.jog.x + dx; dx += inc;}
+	while (tem_inimigo(*e, (e->jog.x + dx), (e->jog.y + dy))) {
+		apaga_inimigo(e, (e->jog.x + dx), (e->jog.y + dy));
+		if (coord_fix == 0) {e->espada.y = e->jog.y + dy; dy += inc;}
+		else {e->espada.x = e->jog.x + dx; dx += inc;}
 	}
-
-	return e;
 }
 
-ESTADO kill_streak (ESTADO e, int dx, int dy) {
+void kill_streak (ESTADO *e, int dx, int dy) {
 	POSICAO n_espada;
-	n_espada.x = e.jog.x + dx; n_espada.y = e.jog.y + dy;
-	if (!tem_inimigo(e, (e.jog.x + dx), (e.jog.y + dy))) {e.espada = n_espada; return e;}
+	n_espada.x = e->jog.x + dx; n_espada.y = e->jog.y + dy;
+	if (!tem_inimigo(*e, (e->jog.x + dx), (e->jog.y + dy))) e->espada = n_espada;
 	else {
-		if (dx != 0) e = kill_line (e, 1, dx);
-		else e = kill_line (e, 0, dy);
-		return e;
+		if (dx != 0) kill_line (e, 1, dx);
+		else kill_line (e, 0, dy);
 	}
 }
 
-ESTADO kill_replace (ESTADO e, int dx, int dy) {
-	int x = e.jog.x + dx;
-	int y = e.jog.y + dy;
+void kill_replace (ESTADO *e, int dx, int dy) {
+	int x = e->jog.x + dx;
+	int y = e->jog.y + dy;
 
-	if (e.PU_Sword == 2) {
-		e.PU_Sword = 1;
-		e = kill_streak(e, dx, dy);
+	if (e->PU_Sword == 2) {
+		e->PU_Sword = 1;
+		kill_streak(e, dx, dy);
 	}
 	else {
-		if (tem_inimigo(e, x, y)) e = apaga_inimigo(e, x, y);
-		else if (tem_espada(e, x, y)) {e.espada.x = TAM; e.espada.y = TAM; e.PU_Sword=0;}
-		else if (tem_item(e, x, y)) e = recolhe_item(e, x, y);
-		e.jog.x = x; e.jog.y = y;
+		if (tem_inimigo(*e, x, y)) apaga_inimigo(e, x, y);
+		else if (tem_espada(*e, x, y)) {e->espada.x = TAM; e->espada.y = TAM; e->PU_Sword=0;}
+		else if (tem_item(*e, x, y)) recolhe_item(e, x, y);
+		e->jog.x = x; e->jog.y = y;
 	}
-
-	return e;
 }
 
-void imprime_movimento(ESTADO e, int dx, int dy) {
-	ESTADO novo = e;
-	int x = e.jog.x + dx;
-	int y = e.jog.y + dy;
-	if(!posicao_valida(x, y))
-		return;
-    if(posicao_ocupada(e, x, y)) {
-        if (!tem_inimigo(e, x, y) && !tem_espada(e, x, y) && !tem_item(e, x, y) && !(tem_obstaculo(e, x, y) && !e.Lava_on)) return;
-				else if (tem_inimigo(e, x, y) && posicao_valida(e.espada.x, e.espada.y)) return;
-		}
+void move(ESTADO *e, int dx, int dy) {
+	kill_replace(e, dx, dy);
 
-	novo = kill_replace(e, dx, dy);
+	e->fase = 1;
+	e->ilumina.x = TAM; e->ilumina.y = TAM;
+	e->teleport_on = 0;
 
-	novo.fase = 1;
-	novo.ilumina.x = TAM; novo.ilumina.y = TAM;
+	if (e->PU_Shield > 0) e->PU_Shield--;
+}
 
-	if (novo.PU_Shield > 0) novo.PU_Shield--;
+int in_range(ESTADO e, int x, int y) {
+	if (e.jog.x == x && e.jog.y == y) return 0;
 
-	imprime_quadr_link(x, y, novo);
+	if (e.teleport_on) return 1;
+	else if (e.PU_Sword == 2) return ((abs(e.jog.x - x) <= 2 && e.jog.y == y) || (abs(e.jog.y - y) <= 2 && e.jog.x == x));
+	else return (abs(e.jog.x - x) <= 1 && abs(e.jog.y - y) <= 1);
+}
+
+void light(ESTADO *e, int x, int y) {
+	if (!posicao_valida(e->ilumina.x, e->ilumina.y)){
+		e->ilumina.x = x;
+		e->ilumina.y = y;
+	} else {
+		e->ilumina.x = TAM;
+		e->ilumina.y = TAM;
+	}
+	e->fase = 0;
 }
 
 void imprime_movimentos(ESTADO e) {
 	int dx, dy;
 
-	if (e.PU_Scroll && e.PU_Scroll_Mana == 5) {
-		e.PU_Scroll = 0;
+	if (e.teleport_on) {
 		for (dx = 0; dx < TAM; dx++)
 			for (dy = 0; dy < TAM; dy++)
-				if (dx != 0 || dy != 0) imprime_movimento (e, dx - e.jog.x, dy - e.jog.y);
+				if (dx != 0 || dy != 0) imprime_quadr_link (dx, dy, e);
 	}
 	else if (e.PU_Sword == 2) {
 		dy = 0;
-		for(dx = -2; dx <= 2; dx++) if (dx!=0) imprime_movimento(e, dx, dy);
+		for(dx = -2; dx <= 2; dx++) if (dx!=0) imprime_quadr_link((e.jog.x + dx), dy, e);
 		dx = 0;
-		for(dy = -2; dy <= 2; dy++) if (dy!=0) imprime_movimento(e, dx, dy);
+		for(dy = -2; dy <= 2; dy++) if (dy!=0) imprime_quadr_link(dx, (e.jog.y + dy), e);
 	}
 	else {
 		for(dx = -1;dx <= 1;dx++)
-			for(dy = -1;dy <= 1;dy++)
-				imprime_movimento(e, dx, dy);
+			for(dy = -1;dy <= 1;dy++) {
+				int x = e.jog.x + dx;
+				int y = e.jog.y + dy;
+				if(!posicao_valida(x, y)) continue;
+				else if(posicao_ocupada(e, x, y)) {
+							if (!tem_inimigo(e, x, y) && !tem_espada(e, x, y) && !tem_item(e, x, y) && !(tem_obstaculo(e, x, y) && !e.Lava_on)) continue;
+							else if (tem_inimigo(e, x, y) && posicao_valida(e.espada.x, e.espada.y)) continue;
+				}
+				imprime_quadr_link(x, y, e);
+			}
 	}
-}
-
-void cria_posicao_a_iluminar(ESTADO e, int x, int y) {
-	ESTADO novo = e;
-	if (posicao_igual(novo.ilumina, x, y)) {novo.ilumina.x = TAM; novo.ilumina.y = TAM; novo.fase = 0;}
-	else {novo.ilumina.x = x; novo.ilumina.y = y; novo.fase = 0;}
-
-	imprime_quadr_link(x, y, novo);
 }
 
 void imprime_jogador(ESTADO e) {
 	if (!posicao_valida(e.jog.x, e.jog.y)) return;
 	IMAGEM(e.jog.x, e.jog.y, ESCALA, "Goblin.png");
-	cria_posicao_a_iluminar(e, e.jog.x, e.jog.y);
+	imprime_quadr_link(e.jog.x, e.jog.y, e);
 	imprime_movimentos(e);
 }
 
@@ -335,11 +339,11 @@ void imprime_inimigos(ESTADO e) {
 	int i;
 	for (i=0; i < (int)e.num_inimigos_longe; i++) {
 		IMAGEM(e.inimigo[i].x, e.inimigo[i].y, ESCALA, "Necromancer.png");
-		cria_posicao_a_iluminar(e, (int)e.inimigo[i].x, (int)e.inimigo[i].y);
+		imprime_quadr_link((int)e.inimigo[i].x, (int)e.inimigo[i].y, e);
 	}
 	for(; i < (int)e.num_inimigos; i++) {
 		IMAGEM(e.inimigo[i].x, e.inimigo[i].y, ESCALA, "Goon.png");
-		cria_posicao_a_iluminar(e, (int)e.inimigo[i].x, (int)e.inimigo[i].y);
+		imprime_quadr_link((int)e.inimigo[i].x, (int)e.inimigo[i].y, e);
 	}
 }
 
@@ -351,22 +355,28 @@ void imprime_obstaculos(ESTADO e) {
 
 }
 
+void novo_nivel(ESTADO *e) {
+		ESTADO novo = inicializar();
+		novo.score = e->score + 5;
+		novo.nivel = e->nivel + 1;
+		novo.num_vidas = e->num_vidas;
+		novo.num_stamina = e->num_stamina;
+		novo.num_mana = e->num_mana;
+		novo.PU_Scroll = e->PU_Scroll;
+
+		int i;
+		for (i=0; i<6; i++) novo.letra[i] = e->letra[i];
+
+		*e = novo;
+}
+
 void imprime_porta(ESTADO e) {
 
 		IMAGEM(e.porta_entrada.x, e.porta_entrada.y, ESCALA, "Bottom_hole.png");
 		IMAGEM(e.porta_saida.x, e.porta_saida.y, ESCALA, "Hole.png");
 
-		if (((abs(e.jog.x - e.porta_saida.x) <= 1 && abs(e.jog.y - e.porta_saida.y) <=1) || e.teleport_on) && !posicao_valida(e.espada.x, e.espada.y)) {
-			ESTADO novo = inicializar();
-			novo.score = e.score + 5;
-			novo.nivel = e.nivel + 1;
-			novo.num_vidas = e.num_vidas;
-			novo.num_stamina = e.num_stamina;
-			novo.num_mana = e.num_mana;
-			novo.PU_Scroll_Mana = e.PU_Scroll_Mana;
-
-			imprime_quadr_link (e.porta_saida.x, e.porta_saida.y, novo);
-		}
+		if ((e.jog.x - e.porta_saida.x) <= 1 && (e.jog.y - e.porta_saida.y <= 1) && !posicao_valida(e.espada.x, e.espada.y))
+			imprime_quadr_link (e.porta_saida.x, e.porta_saida.y, e);
 }
 
 ESTADO mover_inimigos (ESTADO e) {
@@ -378,7 +388,6 @@ ESTADO mover_inimigos (ESTADO e) {
 			e.num_vidas--;
 			e.num_mana = 0;
 			e.num_stamina = 0;
-			e.jog.x = TAM; e.jog.y = TAM;
 			e.game_over = 1;
 		}
 		else if (((abs (e.jog.x - e.inimigo[i].x) == 1 && abs(e.jog.y - e.inimigo[i].y) == 0) || (abs (e.jog.x - e.inimigo[i].x) == 0 && abs(e.jog.y - e.inimigo[i].y) == 1)) && !tem_obstaculo(e, e.jog.x, e.jog.y)) {
@@ -446,44 +455,43 @@ void imprime_ilumi (ESTADO e) {
 	else if (tem_inimigo(e, x, y)) iluminar_inimigo (e, x, y);
 }
 
+void shield(ESTADO * e) {
+		if (e->PU_Shield == 2) {e->PU_Shield = 0; e->num_stamina += 2;}
+		else {e->PU_Shield = 2; e->num_stamina -= 2;}
+
+		if (e->PU_Sword == 2) {e->PU_Sword = 0; e->num_stamina ++;}
+}
+
 void imprime_shield (ESTADO e) {
 
-	if (e.num_stamina <= 1 && e.PU_Shield < 2) {IMAGEM(0, (TAM+1), ESCALA, "X.png"); return;}
+	if ((e.num_stamina < 1 || (e.num_stamina == 1 && e.PU_Sword !=2)) && e.PU_Shield < 2 && !e.teleport_on) {IMAGEM(0, (TAM+1), ESCALA, "X.png"); return;}
 	else if (e.PU_Shield == 2) IMAGEM(0, (TAM+1), ESCALA, "X.png");
 	else IMAGEM(0, (TAM + 1), ESCALA, "Shield_2.png");
 
-	ESTADO novo = e;
-	if (novo.PU_Shield == 2) {novo.PU_Shield = 0; novo.num_stamina += 2;}
-	else {novo.PU_Shield = 2; novo.num_stamina -= 2;}
+	imprime_quadr_link(0, (TAM+1), e);
+}
 
-	if (novo.PU_Sword) {novo.PU_Sword = 0; novo.num_stamina ++;}
+void sword (ESTADO *e) {
+		if (e->PU_Shield == 2) {e->PU_Shield = 0; e->num_stamina += 2;}
 
-	imprime_quadr_link(0, (TAM+1), novo);
+		if (e->PU_Sword == 0 && e->espada.x == TAM && e->espada.y == TAM && (e->num_stamina > 0 || (e->num_stamina == 0 && e->PU_Shield == 2)) ) {
+			e->PU_Sword = 2;
+			e->PU_Shield = 1;
+			e->num_stamina --;
+		}
+		else if (e->PU_Sword == 2) {
+			e->PU_Sword = 0;
+			e->PU_Shield = 1;
+			e->num_stamina ++;
+		}
 }
 
 void imprime_sword (ESTADO e) {
-	ESTADO novo = e;
+	if (e.PU_Sword == 0 && e.espada.x == TAM && e.espada.y == TAM && (e.num_stamina > 0 || (e.num_stamina == 0 && e.PU_Shield == 2)) && !e.teleport_on) IMAGEM(0, TAM, ESCALA, "Mace.png");
+	else if (e.espada.x != TAM && e.espada.y != TAM) {IMAGEM (e.espada.x, e.espada.y, ESCALA, "Mace.png"); IMAGEM(0, TAM, ESCALA, "X.png"); return;}
+	else if (e.PU_Sword == 2) IMAGEM(0, TAM, ESCALA, "X.png");
 
-	if (e.PU_Shield == 2) {novo.PU_Shield = 0; novo.num_stamina += 2;}
-
-	if ((e.num_stamina < 1 && e.PU_Shield != 2)|| e.PU_Sword != 0 || posicao_valida(e.espada.x, e.espada.y)) {IMAGEM(0, TAM, ESCALA, "X.png");}
-	else IMAGEM(0, TAM, ESCALA, "Mace.png");
-
-	if (e.PU_Sword == 0 && e.espada.x == TAM && e.espada.y == TAM && (e.num_stamina > 0 || (e.num_stamina == 0 && e.PU_Shield == 2)) ) {
-		novo.PU_Sword = 2;
-		novo.PU_Shield = 1;
-		novo.num_stamina --;
-
-		imprime_quadr_link (0, TAM, novo);
-	}
-	else if (e.espada.x != TAM && e.espada.y != TAM) IMAGEM (e.espada.x, e.espada.y, ESCALA, "Mace.png");
-	else if (e.PU_Sword == 2) {
-		novo.PU_Sword = 0;
-		novo.PU_Shield = 1;
-		novo.num_stamina ++;
-
-		imprime_quadr_link (0, TAM, novo);
-	}
+	imprime_quadr_link (0, TAM, e);
 }
 
 void teleport(ESTADO *e) {
@@ -493,40 +501,31 @@ void teleport(ESTADO *e) {
 void earthquake(ESTADO *e, int x, int y) {
 	int dx, dy;
 	for (dx = -2; dx <= 2; dx++)
-		for (dy = -2; dy <= 2; dy++) *e = apaga_inimigo(*e, x + dx, y+ dy);
-
-	(*e).PU_Scroll = 0;
+		for (dy = -2; dy <= 2; dy++) apaga_inimigo(e, x + dx, y+ dy);
 }
 
 void obsidian (ESTADO *e) {
-	(*e).Lava_on = 0; (*e).PU_Scroll = 0;
+	(*e).Lava_on = 0;
+}
+
+void scroll(ESTADO *e) {
+	if (e->PU_Shield == 2) {e->PU_Shield = 0; e->num_stamina += 2;}
+	else if (e->PU_Sword == 2) {e->PU_Sword = 0; e->num_stamina++;}
+
+	e->num_mana -=  e->PU_Scroll;
+
+	if (e->PU_Scroll == 1) obsidian(e);
+	else if (e->PU_Scroll == 2) earthquake(e, e->jog.x, e->jog.y);
+	else teleport(e);
+
+	e->PU_Scroll = 0;
+
 }
 
 void imprime_scroll (ESTADO e) {
-	if (e.PU_Shield == 2) {e.PU_Shield = 0; e.num_stamina += 2;}
-	else if (e.PU_Sword == 2) {e.PU_Sword = 0; e.num_stamina++;}
-
-	if (e.PU_Scroll_Mana != 0 && e.PU_Scroll == 0 && e.num_mana >= e.PU_Scroll_Mana) {
+	if (e.num_mana >= e.PU_Scroll && e.PU_Scroll != 0) {
 		IMAGEM(0, 12, ESCALA, "Scroll.png");
-
-		e.PU_Scroll = e.PU_Scroll_Mana;
-
-		if (e.PU_Scroll_Mana == 1) obsidian(&e);
-		else if (e.PU_Scroll_Mana == 2) earthquake(&e, e.jog.x, e.jog.y);
-		else teleport(&e);
-
-		e.num_mana -=  e.PU_Scroll_Mana;
-		e.PU_Scroll_Mana = 0;
-
 		imprime_quadr_link(0, 12, e);
-	}
-	else if (e.PU_Scroll != 0) {
-		IMAGEM(0, 12, ESCALA, "X.png");
-
-		e.num_mana +=  e.PU_Scroll;
-		e.PU_Scroll = 0;
-		imprime_quadr_link(0, 12, e);
-
 	}
 	else IMAGEM(0, 12, ESCALA, "X.png");
 }
@@ -556,7 +555,9 @@ void imprime_items (ESTADO e) {
 }
 
 void imprime_texto(ESTADO e) {
-	TEXTO(1, -1, ESCALA, 35, "#583a25", "Save");
+	char nome[7] = {0};
+	strncpy(nome, e.letra, 6);
+	TEXTO(1, -1, ESCALA, 35, "#583a25", nome);
 
 	char score[MAX_BUFFER];
 	sprintf(score, "Sc:%d", e.score);
@@ -569,7 +570,11 @@ void imprime_texto(ESTADO e) {
 
 	TEXTO(1, 10, ESCALA, 35, "#583a25", "Club");
 	TEXTO(1, 11, ESCALA, 35, "#583a25", "Shield");
-	TEXTO(1, 12, ESCALA, 35, "#583a25", "Scroll");
+
+	if (e.PU_Scroll == 1) TEXTO(1, 12, ESCALA, 35, "#583a25", "Petrify");
+	else if (e.PU_Scroll == 2) TEXTO(1, 12, ESCALA, 35, "#583a25", "Quake");
+	else if (e.PU_Scroll == 5) TEXTO(1, 12, ESCALA, 35, "#583a25", "Portal");
+	else TEXTO(1, 12, ESCALA, 35, "#583a25", "Scroll");
 
 	TEXTO(4, 10, ESCALA, 35, "#583a25", "L:");
 	TEXTO(4, 11, ESCALA, 35, "#583a25", "S:");
@@ -598,6 +603,8 @@ void imprime_canvas() {
 
 void imprime_mapa(ESTADO e) {
 	IMAGEM(0, -1, ESCALA, "Map.png");
+	e.PU_Shield = 1;
+	imprime_quadr_link(0, -1, e);
 }
 
 void imprime_botao(char* link, int y, char* texto) {
@@ -615,27 +622,108 @@ void imprime_botao(char* link, int y, char* texto) {
 	FECHAR_LINK;
 }
 
-void imprime_letras(ESTADO e) {
+void imprime_link_letra(int x, int y, char * nome) {
+	char link[MAX_BUFFER];
+	sprintf(link, "http://localhost/cgi-bin/jogo?Start_%s", nome);
+
+	ABRIR_LINK(link);
+	QUADRADO_LINK(x, y, ESCALA);
+	FECHAR_LINK;
+}
+
+void imprime_letras(char * nome) {
 	int i;
 
 	for (i=0; i<6; i++) {
-			ESTADO novo = e;
 
-			char letra[1];
-			sprintf(letra, "%c", novo.letra[i]);
-			TEXTO((2+i), 6, ESCALA, 40, "#583a25", letra);
+			char letra[2] = {0};
+			letra[0] = nome[i];
+			TEXTO((2+i), 7, ESCALA, 40, "#583a25", letra);
 
-			IMAGEM((2+i), 5, ESCALA, "Up.png");
-			IMAGEM((2+i), 7, ESCALA, "Down.png");
+			IMAGEM((2+i), 5, ESCALA, "Up2.png");
+			IMAGEM((2+i), 6, ESCALA, "Up.png");
+			IMAGEM((2+i), 8, ESCALA, "Down.png");
+			IMAGEM((2+i), 9, ESCALA, "Down2.png");
 
-			if (novo.letra[i] != 'Z') novo.letra[i]++;
-			else novo.letra[i] = 'A';
-			imprime_quadr_link(2+i, 5, novo);
+			if (nome[i] != 'Z') nome[i]++;
+			else nome[i] = 'A';
+			imprime_link_letra((2+i), 6, nome);
 
-			if (novo.letra[i] != 'A') novo.letra[i]-=2;
-			else novo.letra[i] = 'X';
-			imprime_quadr_link(2+i, 7, novo);
+			nome[i] = letra[0];
+
+			if (nome[i] != 'A') nome[i]--;
+			else nome[i] = 'Z';
+			imprime_link_letra((2+i), 8, nome);
+
+			nome[i] = letra[0];
+
+			if (nome[i] < 'V') nome[i]+=5;
+			else nome[i] = ('A' + (nome[i] - 'V'));
+			imprime_link_letra((2+i), 5, nome);
+
+			nome[i] = letra[0];
+
+			if (nome[i] > 'E') nome[i]-=5;
+			else nome[i] = ('Z' - ('E' - nome[i]));
+			imprime_link_letra((2+i), 9, nome);
+
+			nome[i] = letra[0];
 		}
+}
+
+void avanca_linha(char * texto) {
+	int i, j;
+	for (i=0; texto[i]!=0 && texto[i]!=';'; i++);
+	if (texto[i] != 0) {
+		for(j = 0; texto[i + j + 1]!= 0; j++)
+		texto[j] = texto[j+i+1];
+		texto[j] = 0;
+	}
+}
+
+void muda_linha(char * leader, char * nome, char *  lvl, char * scr, int i, char * new_leader) {
+	int j, n;
+	char antes[MAX_BUFFER], depois[MAX_BUFFER];
+	for(j=0; n<i-1; j++) {if (leader[j] == ';') n++; antes[j] = leader[j];}
+	antes[j] = 0;
+	n++;
+	int pos = j;
+	for(; n < 5; j++) {if (leader[j] == ';') n++; depois[j-pos] = leader[j];}
+	depois[j-pos] = 0;
+	sprintf(new_leader, "%s%s,%s,%s;%s",antes, nome, lvl, scr, depois);
+}
+
+void guarda_score(char * nome, int nivel, int ponto) {
+	char leader[MAX_BUFFER], save_leader[MAX_BUFFER];
+	ler(leader, "LEADERS.dat");
+	strcpy(save_leader, leader);
+
+	char nomes[5][7] = {{0}}, level[5][4], score[6][6];
+	int i, num_scans = 0;
+	int pontos[5];
+
+	for (i=0; i<5; i++) {
+		if (sscanf(leader, "%6[^,],%4[^,],%6[^;]", nomes[i], level[i], score[i]) != 3) break;
+		sscanf(leader, "%*6[^,],%*4[^,],%d", &pontos[i]);
+		num_scans++;
+		avanca_linha(leader);
+	}
+
+	strcpy(leader, save_leader);
+	TEXTO_MID(5, 4, ESCALA, 10, "#583a25", leader);
+
+	char lvl[4];
+	sprintf(lvl, "%d", nivel);
+	char scr[6];
+	sprintf(scr, "%d", ponto);
+
+	char new_leader[MAX_BUFFER];
+
+	for(i=0; i<5 && pontos[i] > ponto && i < num_scans; i++);
+	if (i<5) muda_linha(leader, nome, lvl, scr, (i+1), new_leader);
+	TEXTO_MID(5, 6, ESCALA, 10, "#583a25", new_leader);
+
+	escrever(new_leader, "LEADERS.dat");
 }
 
 void game_over(ESTADO e) {
@@ -648,20 +736,93 @@ void game_over(ESTADO e) {
 	TEXTO(1, 1, ESCALA, 110, "#583a25", "GAME");
 	TEXTO_END(9, 3, ESCALA, 110, "#583a25", "OVER");
 
-	imprime_letras(e);
+	char score[MAX_BUFFER];
+	sprintf(score, "Score: %d", e.score);
+
+	char level[MAX_BUFFER];
+	sprintf(level, "Level: %d", e.nivel);
+
+	TEXTO_MID(5, 5, ESCALA, 60, "#583a25", score);
+	TEXTO_MID(5, 7, ESCALA, 60, "#583a25", level);
 
 	imprime_botao("http://localhost/cgi-bin/jogo?", 9, "Main Menu");
 
+	char nome[6];
+	strncpy(nome, e.letra, 6);
 	char link[MAX_BUFFER];
-	sprintf(link, "http://localhost/cgi-bin/jogo?%s", estado2str(inicializar()));
+	sprintf(link, "http://localhost/cgi-bin/jogo?%s", nome);
+
+	guarda_score(nome, e.nivel, e.score);
+
 	imprime_botao(link, 11, "Retry");
+}
+
+void imprime_background(char* texto) {
+	int y,x;
+	for (y=-1; y<TAM + 3; y++)
+		for (x=0; x<TAM; x++)
+			if ((x+y)%2) IMAGEM(x, y, ESCALA, "Ground1_LY.png");
+			else IMAGEM(x, y, ESCALA, "Ground2_LY.png");
+
+	for (x=1; x<9; x++) {
+		if ((x+1)%2) IMAGEM(x, 0, ESCALA, "Ground1_B.png");
+		else IMAGEM(x, 0, ESCALA, "Ground2_B.png");
+	}
+
+	TEXTO_MID(5, 0, ESCALA, 40, "#e4a91f", texto);
+}
+
+void introduzir_nome(char * nome) {
+
+	imprime_background("New Game");
+
+	TEXTO_MID(5, 2, ESCALA, 40, "#583a25", "Introduza um nome");
+	TEXTO_MID(5, 3, ESCALA, 40, "#583a25", "e inicie o jogo:");
+
+	imprime_letras(nome);
+
+	char link[MAX_BUFFER];
+	sprintf(link, "http://localhost/cgi-bin/jogo?%s", nome);
+
+	imprime_botao(link, 11, "Start");
+}
+
+void load(char * args) {
+	ESTADO e;
+
+	char estado[MAX_BUFFER];
+	ler(estado, "SAVE.dat");
+	e = str2estado(estado);
+
+	char nome[6];
+	strncpy(nome, e.letra, 6);
+
+	char fich[11];
+	sprintf(fich, "%s.dat", nome);
+
+	escrever(estado2str(e), fich);
+	sprintf(args, "%s,10,10", nome);
+}
+
+void save(ESTADO *e) {
+	e->fase = 0;
+	escrever(estado2str(*e), "SAVE.dat");
 }
 
 void jogo(ESTADO e) {
 
-	if (e.fase != 0 && e.PU_Shield < 1) e = mover_inimigos(e);
+	if (e.game_over) {
+		game_over(e);
 
-	if (e.game_over) {game_over(e); return;}
+		char nome[6];
+		strncpy(nome, e.letra, 6);
+
+		char fich[11];
+		sprintf(fich, "%s.dat", nome);
+		remove(fich);
+
+		return;
+	}
 
 	imprime_canvas();
 	imprime_texto(e);
@@ -693,28 +854,10 @@ void interface() {
 	TEXTO_MID(5, 1, ESCALA, 110, "#583a25", "GOBLIN");
 	TEXTO_MID(5, 3, ESCALA, 110, "#583a25", "N'BONES");
 
-	char link[MAX_BUFFER];
-	sprintf(link, "http://localhost/cgi-bin/jogo?%s", estado2str(inicializar()));
-
-	imprime_botao(link, 5, "New Game");
-	imprime_botao("http://localhost/cgi-bin/jogo?", 7, "Continue Game");
+	imprime_botao("http://localhost/cgi-bin/jogo?Start_AAAAAA", 5, "New Game");
+	imprime_botao("http://localhost/cgi-bin/jogo?Continue", 7, "Continue Game");
 	imprime_botao("http://localhost/cgi-bin/jogo?Leaderboards", 9, "Leaderboards");
 	imprime_botao("http://localhost/cgi-bin/jogo?Help", 11, "Help");
-}
-
-void imprime_background(char* texto) {
-	int y,x;
-	for (y=-1; y<TAM + 3; y++)
-		for (x=0; x<TAM; x++)
-			if ((x+y)%2) IMAGEM(x, y, ESCALA, "Ground1_LY.png");
-			else IMAGEM(x, y, ESCALA, "Ground2_LY.png");
-
-	for (x=1; x<9; x++) {
-		if ((x+1)%2) IMAGEM(x, 0, ESCALA, "Ground1_B.png");
-		else IMAGEM(x, 0, ESCALA, "Ground2_B.png");
-	}
-
-	TEXTO_MID(5, 0, ESCALA, 40, "#e4a91f", texto);
 }
 
 void imprime_botao_ajuda(int x, int y) {
@@ -777,6 +920,28 @@ void help() {
 void leaderboards() {
 	imprime_background("Leaderboards");
 
+	TEXTO(1, 2, ESCALA, 35, "#583a25", "Pl:");
+	TEXTO_MID(6, 2, ESCALA, 35, "#583a25", "L:");
+	TEXTO_END(9, 2, ESCALA, 35, "#583a25", "Sc:");
+
+	char leader[MAX_BUFFER];
+	ler(leader, "LEADERS.dat");
+
+	char nomes[5][7] = {{0}}, level[5][4], score[6][6];
+	int i, num_scans = 0;
+
+	for (i=0; i<5; i++) {
+		sscanf(leader, "%6[^,],%4[^,],%6[^;]", nomes[i], level[i], score[i]);
+		num_scans++;
+		avanca_linha(leader);
+	}
+
+	for (i = 4; i < 4 + num_scans; i++) {
+		TEXTO(1, i, ESCALA, 35, "#583a25", nomes[i-4]);
+		TEXTO_MID(6, i, ESCALA, 35, "#583a25", level[i-4]);
+		TEXTO_END(9, i, ESCALA, 35, "#583a25", score[i-4]);
+	}
+
 	imprime_botao("http://localhost/cgi-bin/jogo?", 11, "Main Menu");
 }
 
@@ -787,12 +952,64 @@ void ajudas(char* args) {
 	imprime_background(tipo);
 }
 
+ESTADO agir (char* args) {
+	ESTADO e;
+	char nome[6];
+	char fich[11];
+	int x, y;
+
+	if (sscanf(args, "%6c,%d,%d", nome, &x, &y) == 1) {
+		sprintf(fich, "%s.dat", nome);
+
+		e = inicializar();
+		int i;
+		for (i=0; i<6; i++) e.letra[i] = nome[i];
+	}
+	else {
+		sprintf(fich, "%s.dat", nome);
+
+		char estado[MAX_BUFFER];
+		ler(estado, fich);
+		e = str2estado(estado);
+
+		int dx = x - e.jog.x;
+		int dy = y - e.jog.y;
+
+		if (posicao_igual(e.porta_saida, x, y)) novo_nivel(&e);
+		else if (posicao_valida(x, y) && in_range(e, x, y)) move(&e, dx, dy);
+		else if (posicao_valida(x, y)) light(&e, x, y);
+		else if (x == 0 && y == 10) sword(&e);
+		else if (x == 0 && y == 11) shield(&e);
+		else if (x == 0 && y == 12)	scroll(&e);
+		else save(&e);
+
+	}
+
+	return e;
+}
+
 void ler_estado(char *args) {
+	char nome[6];
+
 	if(strlen(args) == 0) interface();
+	else if(sscanf(args, "Start_%s", nome) == 1) introduzir_nome(nome);
 	else if(strcmp(args, "Leaderboards") == 0) leaderboards();
 	else if (strcmp(args, "Help") == 0) help();
-	else if (strlen(args) <= 17) ajudas(args);
-	else jogo(str2estado(args));
+	//*else if (strlen(args) <= 17) ajudas(args);
+	else {
+		if (strcmp(args, "Continue") == 0) load(args);
+
+		ESTADO e = agir(args);
+
+		if (e.fase != 0 && e.PU_Shield < 1) e = mover_inimigos(e);
+		jogo(e);
+
+		char nome[6];
+		sscanf(args, "%6c", nome);
+		char fich[6];
+		sprintf(fich, "%s.dat", nome);
+		escrever(estado2str(e), fich);
+	}
 }
 
 int main() {
