@@ -3,10 +3,10 @@ FICHEIROS=cgi.h estado.c estado.h jogo.c Makefile ler.c escrever.c
 
 install: jogo
 	sudo cp jogo /usr/lib/cgi-bin
+	sudo cp Imagens/* /var/www/html/images
 	sudo cp LEADERS.dat /usr/lib/cgi-bin
 	sudo cp SAVE.dat /usr/lib/cgi-bin
-	touch install
-
+	sudo chown -R www-data:www-data /usr/lib/cgi-bin
 jogo: jogo.o estado.o ler.o escrever.o
 	cc -o jogo jogo.o estado.o
 
