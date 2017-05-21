@@ -174,7 +174,7 @@ ESTADO inicializar() {
 	e.porta_saida.y = 0;
 	e.jog.x = 9;
 	e.jog.y = 9;
-	e = inicializar_posicoes(e, 10, 0);
+	e = inicializar_posicoes(e, 12, 0);
 	e = inicializar_posicoes(e, 20, 1);
 	e.num_inimigos_longe = 3;
 	e.ilumina.x = TAM; e.ilumina.y = TAM;
@@ -781,7 +781,7 @@ void guarda_score(char * nome, int nivel, int ponto) {
 	}
 
 	strcpy(leader, save_leader);
-	TEXTO_MID(5, 4, ESCALA, 10, "#583a25", leader);
+	//TEXTO_MID(5, 4, ESCALA, 10, "#583a25", leader);
 
 	char lvl[4];
 	sprintf(lvl, "%d", nivel);
@@ -793,7 +793,7 @@ void guarda_score(char * nome, int nivel, int ponto) {
 
 	for(i=0; i<5 && pontos[i] > ponto; i++);
 	if (i<5) muda_linha(leader, nome, lvl, scr, (i+1), new_leader);
-	TEXTO_MID(5, 6, ESCALA, 10, "#583a25", new_leader);
+	//TEXTO_MID(5, 6, ESCALA, 10, "#583a25", new_leader);
 
 	escrever(new_leader, "LEADERS.dat");
 }
