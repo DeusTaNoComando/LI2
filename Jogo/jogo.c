@@ -174,9 +174,9 @@ ESTADO inicializar() {
 	e.porta_saida.y = 0;
 	e.jog.x = 9;
 	e.jog.y = 9;
-	e = inicializar_posicoes(e, 20, 0);
+	e = inicializar_posicoes(e, 10, 0);
 	e = inicializar_posicoes(e, 20, 1);
-	e.num_inimigos_longe = 4;
+	e.num_inimigos_longe = 3;
 	e.ilumina.x = TAM; e.ilumina.y = TAM;
 	e.nivel = 1;
 	e.espada.x = TAM; e.espada.y = TAM;
@@ -380,10 +380,78 @@ void imprime_porta(ESTADO e) {
 			imprime_quadr_link (e.porta_saida.x, e.porta_saida.y, e);
 }
 
+int valor_casas (ESTADO e, int x, int y) {
+	if (posicao_valida(x, y)) {
+			if (posicao_ocupada(e, x, y))
+				return 0;
+	} else if (!posicao_valida(x, y))
+				return 0;
+	return 1;
+}
+
+int dist(int x, int y, int ix, int iy) {
+	int r = abs(x - ix) + abs(y - iy);
+	return r;
+}
+
+int range_inimigo_longe(ESTADO e, int i) {
+	int dist;
+	if (i < e.num_inimigos_longe) {
+		if ((abs (e.jog.x - e.inimigo[i].x) == 2 && abs(e.jog.y - e.inimigo[i].y) == 0) && !tem_obstaculo(e, e.jog.x, e.jog.y)) {
+			dist = e.jog.x - e.inimigo[i].x;
+			if (!posicao_ocupada(e, e.jog.x - dist/2, e.jog.y)) return 1;
+		}
+		else if ((abs (e.jog.x - e.inimigo[i].x) == 0 && abs(e.jog.y - e.inimigo[i].y) == 2) && !tem_obstaculo(e, e.jog.x, e.jog.y)) {
+			dist = e.jog.y - e.inimigo[i].y;
+			if (!posicao_ocupada(e, e.jog.x, e.jog.y - dist/2)) return 1;
+		}
+	}
+	return 0;
+}
+
+int range_inimigo (ESTADO e, int i) {
+	if (i >= e.num_inimigos_longe)
+		if (((abs (e.jog.x - e.inimigo[i].x) == 1 && abs(e.jog.y - e.inimigo[i].y) == 0) || (abs (e.jog.x - e.inimigo[i].x) == 0 && abs(e.jog.y - e.inimigo[i].y) == 1)) && !tem_obstaculo(e, e.jog.x, e.jog.y))
+			return 1;
+	return 0;
+}
+
+ESTADO bot (ESTADO e, int i) {
+	int dx, dy;
+	int tam = dist(e.jog.x, e.jog.y, e.inimigo[i].x, e.inimigo[i].y);
+		for(dx = -1; dx <= 1; dx++) {
+			for(dy = -1; dy <= 1; dy++)
+				if(valor_casas(e, e.inimigo[i].x + dx, e.inimigo[i].y + dy) && dist(e.jog.x, e.jog.y, e.inimigo[i].x + dx, e.inimigo[i].y + dy) < tam) {
+					e.inimigo[i].x = e.inimigo[i].x + dx;
+					e.inimigo[i].y = e.inimigo[i].y + dy;
+					break;
+				}
+			if (dist(e.jog.x, e.jog.y, e.inimigo[i].x, e.inimigo[i].y) < tam) break;
+		}
+	return e;
+}
+
+ESTADO bot_longe (ESTADO e, int i) {
+	int dx, dy;
+	dx = 0;
+	for(dy = -2; dy <= 2; dy += 4)
+		if (dist(e.jog.x, e.jog.y + dy, e.inimigo[i].x, e.inimigo[i].y) == 1 && !posicao_ocupada(e, e.jog.x, e.jog.y + dy) && posicao_valida(e.jog.x, e.jog.y + dy)) {
+			e.inimigo[i].y = e.jog.y + dy;
+			return e;
+	}
+	dy = 0;
+	for(dx = -2; dx <= 2; dx += 4)
+		if (dist(e.jog.x + dx, e.jog.y, e.inimigo[i].x, e.inimigo[i].y) == 1 && !posicao_ocupada(e, e.jog.x + dx, e.jog.y) && posicao_valida(e.jog.x + dx, e.jog.y)) {
+			e.inimigo[i].x = e.jog.x + dx;
+			return e;
+		}
+	return e;
+}
+
 ESTADO mover_inimigos (ESTADO e) {
 	int i;
 	for (i=0; i<(int)e.num_inimigos; i++)
-		if (((abs (e.jog.x - e.inimigo[i].x) == 1 && abs(e.jog.y - e.inimigo[i].y) == 0 && e.num_vidas == 1) || (abs (e.jog.x - e.inimigo[i].x) == 0 && abs(e.jog.y - e.inimigo[i].y) == 1 && e.num_vidas == 1)) && !tem_obstaculo(e, e.jog.x, e.jog.y)) {
+		if ((range_inimigo(e, i) || range_inimigo_longe(e, i)) && e.num_vidas == 1) {
 			e.inimigo[i].x = e.jog.x; e.inimigo[i].y = e.jog.y;
 			e.jog.x = TAM; e.jog.y = TAM;
 			e.num_vidas--;
@@ -391,9 +459,12 @@ ESTADO mover_inimigos (ESTADO e) {
 			e.num_stamina = 0;
 			e.game_over = 1;
 		}
-		else if (((abs (e.jog.x - e.inimigo[i].x) == 1 && abs(e.jog.y - e.inimigo[i].y) == 0) || (abs (e.jog.x - e.inimigo[i].x) == 0 && abs(e.jog.y - e.inimigo[i].y) == 1)) && !tem_obstaculo(e, e.jog.x, e.jog.y)) {
+		else if (range_inimigo(e, i) || range_inimigo_longe(e, i)) {
 			e.num_vidas--;
 			}
+		else if (i < e.num_inimigos_longe && (abs(e.jog.x - e.inimigo[i].x) <= 2 && abs(e.jog.y - e.inimigo[i].y) <= 2))
+		 	e = bot_longe(e, i);
+		else e = bot(e, i);
 	return e;
 }
 
@@ -700,13 +771,12 @@ void guarda_score(char * nome, int nivel, int ponto) {
 	strcpy(save_leader, leader);
 
 	char nomes[5][7] = {{0}}, level[5][4], score[6][6];
-	int i, num_scans = 0;
+	int i;
 	int pontos[5];
 
 	for (i=0; i<5; i++) {
 		if (sscanf(leader, "%6[^,],%4[^,],%6[^;]", nomes[i], level[i], score[i]) != 3) break;
 		sscanf(leader, "%*6[^,],%*4[^,],%d", &pontos[i]);
-		num_scans++;
 		avanca_linha(leader);
 	}
 
@@ -719,8 +789,9 @@ void guarda_score(char * nome, int nivel, int ponto) {
 	sprintf(scr, "%d", ponto);
 
 	char new_leader[MAX_BUFFER];
+	strcpy(new_leader, leader);
 
-	for(i=0; i<5 && pontos[i] > ponto && i < num_scans; i++);
+	for(i=0; i<5 && pontos[i] > ponto; i++);
 	if (i<5) muda_linha(leader, nome, lvl, scr, (i+1), new_leader);
 	TEXTO_MID(5, 6, ESCALA, 10, "#583a25", new_leader);
 
