@@ -282,6 +282,7 @@ void move(ESTADO *e, int dx, int dy) {
 
 int in_range(ESTADO e, int x, int y) {
 	if (e.jog.x == x && e.jog.y == y) return 0;
+	else if (e.PU_Sword == 1 && tem_inimigo(e, x, y)) return 0;
 
 	if (e.teleport_on) return 1;
 	else if (e.PU_Sword == 2) return ((abs(e.jog.x - x) <= 2 && e.jog.y == y) || (abs(e.jog.y - y) <= 2 && e.jog.x == x));
