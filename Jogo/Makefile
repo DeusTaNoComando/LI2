@@ -1,5 +1,5 @@
 CFLAGS=-Wall -g
-FICHEIROS=cgi.h estado.c estado.h jogo.c Makefile ler.c escrever.c
+FICHEIROS=cgi.h estado.c estado.h jogo.c Makefile ler.c escrever.c ler.h escrever.h LEADERS.dat SAVE.dat Imagens/*
 
 install: jogo
 	sudo cp jogo /usr/lib/cgi-bin

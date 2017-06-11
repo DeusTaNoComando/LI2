@@ -6,18 +6,52 @@
 #include "ler.h"
 #include "escrever.h"
 
+/**
+@file jogo.c
+Ficheiro principal
+*/
+
+/**
+brief Macro para o tamanho máximo para o estado e etc
+*/
 #define MAX_BUFFER		10240
+/**
+brief Macro para o tamanho do tabuleiro
+*/
 #define TAM				10
+/**
+brief Macro para a escala para a impressao dos objetos
+*/
 #define ESCALA			40
 
+/**
+\brief Função que testa se a posição é valida
+@param x Coordenada x
+@param y Coordenada y
+@returns 1 se a posição for válida, 0 caso contrário
+*/
 int posicao_valida(int x, int y) {
 	return (x >= 0 && y >= 0 && x < TAM && y < TAM);
 }
 
+/**
+\brief Função que testa se duas posições são iguais
+@param p Posição a comparar com as coordenadas
+@param x Coordenada x
+@param y Coordenada y
+@returns 1 se as posições são iguas, 0 caso contrário
+*/
 int posicao_igual(POSICAO p, int x, int y) {
     return p.x == x && p.y == y;
 }
 
+/**
+\brief Função que testa se uma posição tem um item
+@param e Estado de onde extraimos os items
+@param x Coordenada x
+@param y Coordenada y
+@returns 1 se tem item, 0 caso contrário
+*/
 int tem_item (ESTADO e, int x, int y) {
 	int i;
 	for(i = 0;i < e.num_items;i++)
@@ -26,14 +60,35 @@ int tem_item (ESTADO e, int x, int y) {
 	return 0;
 }
 
+/**
+\brief Função que testa se uma posição tem a porta de saída
+@param e Estado de onde extraimos a posicao da porta
+@param x Coordenada x
+@param y Coordenada y
+@returns 1 se tem porta, 0 caso contrário
+*/
 int tem_porta(ESTADO e, int x, int y) {
 	return (posicao_igual(e.porta_saida, x, y));
 }
 
+/**
+\brief Função que testa se uma posição tem o jogador
+@param e Estado de onde extraimos a posicao do jogador
+@param x Coordenada x
+@param y Coordenada y
+@returns 1 se tem jogador, 0 caso contrário
+*/
 int tem_jogador(ESTADO e, int x, int y) {
     return posicao_igual(e.jog, x, y);
 }
 
+/**
+\brief Função que testa se uma posição tem um inimigo
+@param e Estado de onde extraimos os inimigos
+@param x Coordenada x
+@param y Coordenada y
+@returns 1 se tem inimigo, 0 caso contrário
+*/
 int tem_inimigo(ESTADO e, int x, int y) {
     int i;
     for(i = 0;i < e.num_inimigos;i++)
@@ -42,6 +97,13 @@ int tem_inimigo(ESTADO e, int x, int y) {
     return 0;
 }
 
+/**
+\brief Função que testa se uma posição tem um inimigo que ataca ao longe
+@param e Estado de onde extraimos os inimigos que atacam ao longe
+@param x Coordenada x
+@param y Coordenada y
+@returns 1 se tem inimigo que ataca ao longe, 0 caso contrário
+*/
 int tem_inim_longe (ESTADO e, int x, int y) {
 	int i;
 	for(i = 0; i < e.num_inimigos_longe;i++)
@@ -50,6 +112,13 @@ int tem_inim_longe (ESTADO e, int x, int y) {
 	return 0;
 }
 
+/**
+\brief Função que testa se uma posição tem um obstaculo
+@param e Estado de onde extraimos os obstaculos
+@param x Coordenada x
+@param y Coordenada y
+@returns 1 se tem obstaculos, 0 caso contrário
+*/
 int tem_obstaculo(ESTADO e, int x, int y) {
     int i;
     for(i = 0;i < e.num_obstaculos;i++)
@@ -58,14 +127,34 @@ int tem_obstaculo(ESTADO e, int x, int y) {
     return 0;
 }
 
+/**
+\brief Função que testa se uma posição tem a espada caída
+@param e Estado de onde extraimos a posicao da espada caída
+@param x Coordenada x
+@param y Coordenada y
+@returns 1 se tem a espada caída, 0 caso contrário
+*/
 int tem_espada(ESTADO e, int x, int y) {
 	return posicao_igual(e.espada, x, y);
 }
 
+/**
+\brief Função que testa se uma posição é uma casa inacessível
+@param e Estado de onde extraimos as casas inacessíveis
+@param x Coordenada x
+@param y Coordenada y
+@returns 1 se a casa está ocupada, 0 caso contrário
+*/
 int posicao_ocupada(ESTADO e, int x, int y) {
     return tem_jogador(e, x, y) || tem_inimigo(e, x, y) || tem_obstaculo(e, x, y) || tem_porta(e, x, y) || tem_espada(e, x, y) || tem_item(e, x, y);
 }
 
+/**
+\brief Função que imprime um quadrado invisivel para servir de link
+@param x Coordenada x
+@param y Coordenada y
+@param e Estado que tornaremos link
+*/
 void imprime_quadr_link (int x, int y, ESTADO e) {
 	char nome[7] = {0};
 	strncpy(nome, e.letra, 6);
@@ -78,6 +167,12 @@ void imprime_quadr_link (int x, int y, ESTADO e) {
 	FECHAR_LINK;
 }
 
+/**
+\brief Função que imprime as casas possíveis de movimento para os inimigos
+@param e Estado de onde extraimos o que contem cada casa
+@param x Coordenada x
+@param y Coordenada y
+*/
 void cores_inimigo (ESTADO e, int x, int y) {
 	if (tem_obstaculo(e, x, y) || tem_porta(e, x, y) || tem_inimigo (e, x, y))
 		if ((x+y)%2) IMAGEM(x, y, ESCALA, "Ground1_BW.png");
@@ -90,6 +185,12 @@ void cores_inimigo (ESTADO e, int x, int y) {
 		else IMAGEM(x, y, ESCALA, "Ground2_L.png");
 }
 
+/**
+\brief Função que imprime as casas possíveis de movimento para o jogador
+@param e Estado de onde extraimos o que contem cada casa
+@param x Coordenada x
+@param y Coordenada y
+*/
 void cores_jogador (ESTADO e, int x, int y) {
 	if (tem_inimigo(e, x, y))
 		if ((x+y)%2) IMAGEM(x, y, ESCALA, "Ground1_R.png");
@@ -105,6 +206,13 @@ void cores_jogador (ESTADO e, int x, int y) {
 		else IMAGEM(x, y, ESCALA, "Ground2_L.png");
 }
 
+/**
+\brief Função que inicia o processo de iluminar as casas possiveis de movimento
+@param e Estado de onde extraimos o que contem cada casa
+@param x Coordenada x
+@param y Coordenada y
+@param jog_inimi Int decisor se o objeto é um inimigo(1) ou um jogador(0)
+*/
 void imprime_casa_iluminada (ESTADO e, int x, int y, int jog_inim) {
 	if (!posicao_valida(x,y)) return;
 
@@ -113,12 +221,23 @@ void imprime_casa_iluminada (ESTADO e, int x, int y, int jog_inim) {
 
 	}
 
+/**
+\brief Função que imprime uma casa no tabuleiro
+@param x Coordenada x
+@param y Coordenada y
+*/
 void imprime_casa(int x, int y) {
 	int idx = (x + y) % 2;
 	if (idx == 0) IMAGEM(x, y, ESCALA, "Ground1_Y.png");
 	else IMAGEM(x, y, ESCALA, "Ground2_B.png");
 }
 
+/**
+\brief Função que introduz um objeto numa casa aleatória
+@param e Estado que usamos para ver se podemos colocar o obstaculo em cada casa
+@param tipo_item Int decisor se o objeto é um inimigo(0), um obstaculo(1) ou um item(2)
+@returns Estado atualizado com o objeto introduzido em campo
+*/
 ESTADO inicializar_posicao(ESTADO e, int tipo_item) {
     int x, y;
     do {
@@ -145,6 +264,13 @@ ESTADO inicializar_posicao(ESTADO e, int tipo_item) {
     return e;
 	}
 
+/**
+\brief Função que inicia o processo de introduzir um certo numero de objetos em casas
+@param e Estado que usamos para ver se podemos colocar o obstaculo em cada casa
+@param num Numero de objetos a introduzir
+@param tipo_item Int decisor se o objeto é um inimigo(0), um obstaculo(1) ou um item(2)
+@returs Estado com os objetos introduzidos em campo
+*/
 ESTADO inicializar_posicoes (ESTADO e, int num, int tipo) {
 	int i;
 	for(i = 0; i < num; i++)
@@ -152,6 +278,11 @@ ESTADO inicializar_posicoes (ESTADO e, int num, int tipo) {
 	return e;
 }
 
+/**
+\brief Função que decide que tipos de items são introduzidos e quantos são aleatoriamente
+@param e Estado que é modificado
+@returs Estado com os tipos de items definidos
+*/
 ESTADO inicializar_tipo_items (ESTADO e) {
 	int i;
 	for (i=0; i < (int)e.num_items; i++) {
@@ -165,6 +296,10 @@ ESTADO inicializar_tipo_items (ESTADO e) {
 	return e;
 }
 
+/**
+\brief Função que cria um novo nivel e inicializa tudo
+@returs Estado com os tipos de items definidos
+*/
 ESTADO inicializar() {
 	ESTADO e = {0};
 	sprintf(e.letra, "%s", "AAAAAA");
@@ -190,6 +325,12 @@ ESTADO inicializar() {
 	return e;
 }
 
+/**
+\brief Função que trata da recolha de um scroll e seus benificios
+@param e Estado a ser modificado com a recolha
+@param x Coordenada x do jogador (futura) e do scroll
+@param y Coordenada y do jogador (futura) e do scroll
+*/
 void recolhe_scroll (ESTADO * e, int x, int y) {
 	int tipo = random() % 10;
 
@@ -198,6 +339,12 @@ void recolhe_scroll (ESTADO * e, int x, int y) {
 	else (*e).PU_Scroll = 5;
 }
 
+/**
+\brief Função que trata da recolha de um item e seus benificios
+@param e Estado a ser modificado com a recolha
+@param x Coordenada x do jogador (futura) e do item
+@param y Coordenada y do jogador (futura) e do item
+*/
 void recolhe_item(ESTADO *e, int x, int y) {
 	int i;
 	for (i=0; e->items[i].x != x || e->items[i].y != y; i++);
@@ -216,6 +363,12 @@ void recolhe_item(ESTADO *e, int x, int y) {
 	e->score++;
 }
 
+/**
+\brief Função que trata de eliminar um inimigo da face do tabuleiro
+@param e Estado a ser modificado com a matança do inimigo
+@param x Coordenada x do inimigo a ser aniquilado
+@param y Coordenada y do inimigo a ser aniquilado
+*/
 void apaga_inimigo (ESTADO *e, int x, int y) {
 	int i;
 	for (i=0; i < (int)e->num_inimigos; i++)
@@ -228,6 +381,12 @@ void apaga_inimigo (ESTADO *e, int x, int y) {
 		}
 }
 
+/**
+\brief Função que trata de eliminar os inimigos numa linha reta ao atirar a espada
+@param e Estado a ser modificado com a matança dos inimigos
+@param coord_fix Coordenada fixa decisora se a matança é vertical ou horizontal
+@param d Coordenada que decide a partir de onde começa a matar
+*/
 void kill_line (ESTADO *e, int coord_fix, int d) {
 	int dx = 0, dy = 0, inc;
 
@@ -244,6 +403,12 @@ void kill_line (ESTADO *e, int coord_fix, int d) {
 	}
 }
 
+/**
+\brief Função que trata de mudar a posição da espada quando lançada e invocar a matança
+@param e Estado a ser modificado com a matança dos inimigos
+@param dx Posicao relativa da espada ao jogador horizontalmente
+@param dy Posicao relativa da espada ao jogador verticalmente
+*/
 void kill_streak (ESTADO *e, int dx, int dy) {
 	POSICAO n_espada;
 	n_espada.x = e->jog.x + dx; n_espada.y = e->jog.y + dy;
@@ -254,6 +419,12 @@ void kill_streak (ESTADO *e, int dx, int dy) {
 	}
 }
 
+/**
+\brief Função que tira o que está na posicao a ser ocupada pelo jogador (by killing or replacing)
+@param e Estado a ser modificado com a matança dos inimigos
+@param dx Posicao relativa da posicao futura ao jogador horizontalmente
+@param dy Posicao relativa da posicao futura ao jogador verticalmente
+*/
 void kill_replace (ESTADO *e, int dx, int dy) {
 	int x = e->jog.x + dx;
 	int y = e->jog.y + dy;
@@ -270,6 +441,12 @@ void kill_replace (ESTADO *e, int dx, int dy) {
 	}
 }
 
+/**
+\brief Função que trata de mover o jogador para a posicao nova
+@param e Estado a ser modificado com a matança dos inimigos
+@param dx Posicao relativa da posicao futura ao jogador horizontalmente
+@param dy Posicao relativa da posicao futura ao jogador verticalmente
+*/
 void move(ESTADO *e, int dx, int dy) {
 	kill_replace(e, dx, dy);
 
@@ -280,6 +457,12 @@ void move(ESTADO *e, int dx, int dy) {
 	if (e->PU_Shield > 0) e->PU_Shield--;
 }
 
+/**
+\brief Função que diz se podemos introduzir um link na posicao
+@param e Estado de onde retiramos as condicoes de colocação do link
+@param x Coordenada x da posicao a por um link
+@param y Coordenada y da posicao a por um link
+*/
 int in_range(ESTADO e, int x, int y) {
 	if (e.jog.x == x && e.jog.y == y) return 0;
 	else if (e.PU_Sword == 1 && tem_inimigo(e, x, y)) return 0;
@@ -289,6 +472,12 @@ int in_range(ESTADO e, int x, int y) {
 	else return (abs(e.jog.x - x) <= 1 && abs(e.jog.y - y) <= 1);
 }
 
+/**
+\brief Função que trata de modificar o estado para que a casa seja iluminada
+@param e Estado a modificar para sabermos que as casas são para ser iluminadas
+@param x Coordenada x da posicao a iluminar
+@param y Coordenada y da posicao a iluminar
+*/
 void light(ESTADO *e, int x, int y) {
 	if (!posicao_valida(e->ilumina.x, e->ilumina.y)){
 		e->ilumina.x = x;
@@ -300,6 +489,10 @@ void light(ESTADO *e, int x, int y) {
 	e->fase = 0;
 }
 
+/**
+\brief Função que trata de imprimir os movimentos possíveis que o jogador pode fazer
+@param e Estado que usa para saber os movimentos possiveis
+*/
 void imprime_movimentos(ESTADO e) {
 	int dx, dy;
 
@@ -309,10 +502,8 @@ void imprime_movimentos(ESTADO e) {
 				if (dx != 0 || dy != 0) imprime_quadr_link (dx, dy, e);
 	}
 	else if (e.PU_Sword == 2) {
-		dy = 0;
-		for(dx = -2; dx <= 2; dx++) if (dx!=0) imprime_quadr_link((e.jog.x + dx), dy, e);
-		dx = 0;
-		for(dy = -2; dy <= 2; dy++) if (dy!=0) imprime_quadr_link(dx, (e.jog.y + dy), e);
+		for(dx = -2; dx <= 2; dx++) if (dx!=0) imprime_quadr_link((e.jog.x + dx), e.jog.y, e);
+		for(dy = -2; dy <= 2; dy++) if (dy!=0) imprime_quadr_link(e.jog.x, (e.jog.y + dy), e);
 	}
 	else {
 		for(dx = -1;dx <= 1;dx++)
@@ -329,6 +520,10 @@ void imprime_movimentos(ESTADO e) {
 	}
 }
 
+/**
+\brief Função que trata de imprimir os movimentos possíveis que o jogador pode fazer
+@param e Estado que usa para saber a posição do jogador
+*/
 void imprime_jogador(ESTADO e) {
 	if (!posicao_valida(e.jog.x, e.jog.y)) return;
 	IMAGEM(e.jog.x, e.jog.y, ESCALA, "Goblin.png");
@@ -336,6 +531,10 @@ void imprime_jogador(ESTADO e) {
 	imprime_movimentos(e);
 }
 
+/**
+\brief Função que trata de imprimir os inimigios
+@param e Estado que usa para saber a posição dos inimigos
+*/
 void imprime_inimigos(ESTADO e) {
 	int i;
 	for (i=0; i < (int)e.num_inimigos_longe; i++) {
@@ -348,6 +547,10 @@ void imprime_inimigos(ESTADO e) {
 	}
 }
 
+/**
+\brief Função que trata de imprimir os obstáculos
+@param e Estado que usa para saber a posição dos obstáculos
+*/
 void imprime_obstaculos(ESTADO e) {
 	int i;
 	for(i = 0; i < e.num_obstaculos; i++)
@@ -356,6 +559,10 @@ void imprime_obstaculos(ESTADO e) {
 
 }
 
+/**
+\brief Função que trata de criar um novo nível para quando o jogador chega à porta
+@param e Estado que altera para um novo nível
+*/
 void novo_nivel(ESTADO *e) {
 		ESTADO novo = inicializar();
 		novo.score = e->score + 5;
@@ -371,6 +578,10 @@ void novo_nivel(ESTADO *e) {
 		*e = novo;
 }
 
+/**
+\brief Função que trata de imprimir no tabuleiro a porta
+@param e Estado de onde retira a posição da porta
+*/
 void imprime_porta(ESTADO e) {
 
 		IMAGEM(e.porta_entrada.x, e.porta_entrada.y, ESCALA, "Bottom_hole.png");
@@ -448,6 +659,11 @@ ESTADO bot_longe (ESTADO e, int i) {
 	return e;
 }
 
+/**
+\brief Função que trata de mover os inimigos
+@param e Estado de onde retira as posições dos inimigos entre outras coisas
+@returns Estado modificado com os inimigos movidos
+*/
 ESTADO mover_inimigos (ESTADO e) {
 	int i;
 	for (i=0; i<(int)e.num_inimigos; i++)
@@ -468,6 +684,10 @@ ESTADO mover_inimigos (ESTADO e) {
 	return e;
 }
 
+/**
+\brief Função que trata de iluminar os inimigos
+@param e Estado de onde retira a posição do inimigo
+*/
 void iluminar_inimigo (ESTADO e, int x, int y) {
 	int dx, dy;
 	for (dx=-1; dx<= 1; dx++)
@@ -475,6 +695,10 @@ void iluminar_inimigo (ESTADO e, int x, int y) {
 			if (dx == 0 || dy == 0) imprime_casa_iluminada(e, x + dx, y + dy, 1);
 }
 
+/**
+\brief Função que trata de iluminar o jogador
+@param e Estado de onde retira a posição do jogador
+*/
 void iluminar_jogador (ESTADO e, int x, int y) {
 	int dx, dy;
 
@@ -490,6 +714,10 @@ void iluminar_jogador (ESTADO e, int x, int y) {
 	}
 }
 
+/**
+\brief Função que trata de iluminar os inimigos que atacam ao longe
+@param e Estado de onde retira a posição do inimigo
+*/
 void iluminar_inimigo_longe (ESTADO e, int x, int y) {
 	int dx, dy;
 
@@ -518,6 +746,10 @@ void iluminar_inimigo_longe (ESTADO e, int x, int y) {
 
 }
 
+/**
+\brief Função que trata de escolher o que se tem de iluminar
+@param e Estado de onde retira a posição a iluminar
+*/
 void imprime_ilumi (ESTADO e) {
 	int x = e.ilumina.x;
 	int y = e.ilumina.y;
@@ -527,6 +759,10 @@ void imprime_ilumi (ESTADO e) {
 	else if (tem_inimigo(e, x, y)) iluminar_inimigo (e, x, y);
 }
 
+/**
+\brief Função que trata de personificar os efeitos do poder escudo
+@param e Estado que altera para causar os efeitos necessários
+*/
 void shield(ESTADO * e) {
 		if (e->PU_Shield == 2) {e->PU_Shield = 0; e->num_stamina += 2;}
 		else {e->PU_Shield = 2; e->num_stamina -= 2;}
@@ -534,6 +770,10 @@ void shield(ESTADO * e) {
 		if (e->PU_Sword == 2) {e->PU_Sword = 0; e->num_stamina ++;}
 }
 
+/**
+\brief Função que imprime o escudo no tabuleiro
+@param e Estado onde vai buscar se o poder está ativado
+*/
 void imprime_shield (ESTADO e) {
 
 	if ((e.num_stamina < 1 || (e.num_stamina == 1 && e.PU_Sword !=2)) && e.PU_Shield < 2 && !e.teleport_on) {IMAGEM(0, (TAM+1), ESCALA, "X.png"); return;}
@@ -543,6 +783,10 @@ void imprime_shield (ESTADO e) {
 	imprime_quadr_link(0, (TAM+1), e);
 }
 
+/**
+\brief Função que trata de personificar os efeitos do poder espada
+@param e Estado que altera para causar os efeitos necessários
+*/
 void sword (ESTADO *e) {
 		if (e->PU_Shield == 2) {e->PU_Shield = 0; e->num_stamina += 2;}
 
@@ -558,6 +802,10 @@ void sword (ESTADO *e) {
 		}
 }
 
+/**
+\brief Função que imprime a espada no tabuleiro
+@param e Estado onde vai buscar a posição da espada e se o poder está ativado
+*/
 void imprime_sword (ESTADO e) {
 	if (e.PU_Sword == 0 && e.espada.x == TAM && e.espada.y == TAM && (e.num_stamina > 0 || (e.num_stamina == 0 && e.PU_Shield == 2)) && !e.teleport_on) IMAGEM(0, TAM, ESCALA, "Mace.png");
 	else if (e.espada.x != TAM && e.espada.y != TAM) {IMAGEM (e.espada.x, e.espada.y, ESCALA, "Mace.png"); IMAGEM(0, TAM, ESCALA, "X.png"); return;}
@@ -566,20 +814,38 @@ void imprime_sword (ESTADO e) {
 	imprime_quadr_link (0, TAM, e);
 }
 
+/**
+\brief Função que trata de personificar os efeitos do poder teletransporte
+@param e Estado que altera para causar os efeitos necessários
+*/
 void teleport(ESTADO *e) {
 	(*e).teleport_on = 1;
 }
 
+/**
+\brief Função que trata de personificar os efeitos do poder terramoto
+@param e Estado que altera para causar os efeitos necessários
+@param x Coordenada x do jogador
+@param y Coordenada y do jogador
+*/
 void earthquake(ESTADO *e, int x, int y) {
 	int dx, dy;
 	for (dx = -2; dx <= 2; dx++)
 		for (dy = -2; dy <= 2; dy++) apaga_inimigo(e, x + dx, y+ dy);
 }
 
+/**
+\brief Função que trata de personificar os efeitos do poder petrificar
+@param e Estado que altera para causar os efeitos necessários
+*/
 void obsidian (ESTADO *e) {
 	(*e).Lava_on = 0;
 }
 
+/**
+\brief Função que trata de decidir que efeitos causar consoante o tipo de scroll
+@param e Estado que altera para causar os efeitos necessários
+*/
 void scroll(ESTADO *e) {
 	if (e->PU_Shield == 2) {e->PU_Shield = 0; e->num_stamina += 2;}
 	else if (e->PU_Sword == 2) {e->PU_Sword = 0; e->num_stamina++;}
@@ -1017,11 +1283,81 @@ void leaderboards() {
 	imprime_botao("http://localhost/cgi-bin/jogo?", 11, "Main Menu");
 }
 
-void ajudas(char* args) {
-	char tipo[12];
-	sscanf(args, "Help_%s", tipo);
+void imprime_texto_ajuda(char *tipo) {
+	if (strcmp(tipo, "Goblin") == 0) {
+		TEXTO(1, 2, ESCALA, 35, "#583a25", "- Main character");
+		TEXTO(1, 3, ESCALA, 35, "#583a25", "- Kills skeletons");
+		TEXTO(1, 4, ESCALA, 35, "#583a25", "- Attacks and moves");
+		TEXTO(1, 5, ESCALA, 35, "#583a25", "in all directions");
+		TEXTO(1, 6, ESCALA, 35, "#583a25", "- Has 3 powers: ");
+		TEXTO(1, 7, ESCALA, 35, "#583a25", "Club, Shield & Scroll");
+	}
+	else if (strcmp(tipo, "Goon") == 0) {
+		TEXTO(1, 2, ESCALA, 35, "#583a25", "- Easy enemy");
+		TEXTO(1, 3, ESCALA, 35, "#583a25", "- Attacks vertically");
+		TEXTO(1, 4, ESCALA, 35, "#583a25", "& horizontally");
+		TEXTO(1, 5, ESCALA, 35, "#583a25", "- Has range of one");
+		TEXTO(1, 6, ESCALA, 35, "#583a25", "- Moves in all");
+		TEXTO(1, 7, ESCALA, 35, "#583a25", "directions");
+	}
+	else if (strcmp(tipo, "Necromancer") == 0) {
+		TEXTO(1, 2, ESCALA, 35, "#583a25", "- Hard enemy");
+		TEXTO(1, 3, ESCALA, 35, "#583a25", "- Attacks as a Goon");
+		TEXTO(1, 4, ESCALA, 35, "#583a25", "but only if you're");
+		TEXTO(1, 5, ESCALA, 35, "#583a25", "at a range of 2");
+		TEXTO(1, 6, ESCALA, 35, "#583a25", "- Moves in all");
+		TEXTO(1, 7, ESCALA, 35, "#583a25", "directions");
+	}
+	else if (strcmp(tipo, "Hearts") == 0) {
+		TEXTO(1, 2, ESCALA, 35, "#583a25", "- Red hearts mean");
+		TEXTO(1, 3, ESCALA, 35, "#583a25", "life poins left ");
+		TEXTO(1, 4, ESCALA, 35, "#583a25", "- Green hearts mean");
+		TEXTO(1, 5, ESCALA, 35, "#583a25", "stamina points left");
+		TEXTO(1, 6, ESCALA, 35, "#583a25", "- Blue hearts mean");
+		TEXTO(1, 7, ESCALA, 35, "#583a25", "mana points left");
+	}
+	else if (strcmp(tipo, "Potions") == 0) {
+		TEXTO(1, 2, ESCALA, 35, "#583a25", "- Red potions give");
+		TEXTO(1, 3, ESCALA, 35, "#583a25", "1 life point");
+		TEXTO(1, 4, ESCALA, 35, "#583a25", "- Green potions give");
+		TEXTO(1, 5, ESCALA, 35, "#583a25", "1 stamina point");
+		TEXTO(1, 6, ESCALA, 35, "#583a25", "- Blue potions give");
+		TEXTO(1, 7, ESCALA, 35, "#583a25", "1 mana point");
+	}
+	else if (strcmp(tipo, "Club") == 0) {
+		TEXTO(1, 2, ESCALA, 35, "#583a25", "- Hits horizontally");
+		TEXTO(1, 3, ESCALA, 35, "#583a25", "and vertically");
+		TEXTO(1, 4, ESCALA, 35, "#583a25", "- Has range of 1 or 2");
+		TEXTO(1, 5, ESCALA, 35, "#583a25", "and kill anything in");
+		TEXTO(1, 6, ESCALA, 35, "#583a25", "a row ");
+		TEXTO(1, 7, ESCALA, 35, "#583a25", "- Uses 1 stamina point");
+	}
+	else if (strcmp(tipo, "Shield") == 0) {
+		TEXTO(1, 2, ESCALA, 35, "#583a25", "- Activates a ");
+		TEXTO(1, 3, ESCALA, 35, "#583a25", "protection that makes");
+		TEXTO(1, 4, ESCALA, 35, "#583a25", "you invincible for");
+		TEXTO(1, 5, ESCALA, 35, "#583a25", "a turn to every");
+		TEXTO(1, 6, ESCALA, 35, "#583a25", "hit");
+		TEXTO(1, 7, ESCALA, 35, "#583a25", "- Uses 2 stamina points");
+	}
+	else if (strcmp(tipo, "Scroll") == 0) {
+		TEXTO(1, 2, ESCALA, 35, "#583a25", "- Petrify uses 1 mana");
+		TEXTO(1, 3, ESCALA, 35, "#583a25", "& makes lava walkable");
+		TEXTO(1, 4, ESCALA, 35, "#583a25", "- Quake uses 3 mana");
+		TEXTO(1, 5, ESCALA, 35, "#583a25", "& kills anything nearby");
+		TEXTO(1, 6, ESCALA, 35, "#583a25", "- Teleport uses 5 mana");
+		TEXTO(1, 7, ESCALA, 35, "#583a25", "& enables teleport");
+	}
+}
 
-	imprime_background(tipo);
+void ajudas(char* args) {
+
+	imprime_background(args);
+
+	imprime_texto_ajuda(args);
+
+	imprime_botao("http://localhost/cgi-bin/jogo?Help", 9, "Help");
+	imprime_botao("http://localhost/cgi-bin/jogo?", 11, "Main Menu");
 }
 
 ESTADO agir (char* args) {
@@ -1067,7 +1403,7 @@ void ler_estado(char *args) {
 	else if(sscanf(args, "Start_%s", nome) == 1) introduzir_nome(nome);
 	else if(strcmp(args, "Leaderboards") == 0) leaderboards();
 	else if (strcmp(args, "Help") == 0) help();
-	//*else if (strlen(args) <= 17) ajudas(args);
+	else if (sscanf(args, "Help_%s", nome) == 1) ajudas(nome);
 	else {
 		if (strcmp(args, "Continue") == 0) load(args);
 
