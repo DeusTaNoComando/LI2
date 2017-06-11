@@ -973,6 +973,9 @@ void imprime_texto(ESTADO e) {
 	TEXTO(4, 12, ESCALA, 35, "#583a25", "M:");
 }
 
+/**
+\brief Função que imprime a interface de jogo
+*/
 void imprime_canvas() {
 	int x, y;
 
@@ -993,12 +996,22 @@ void imprime_canvas() {
 		}
 }
 
+/**
+\brief Função que imprime o mapa de jogo
+@param e Estado contendo o conteudo do jogo
+*/
 void imprime_mapa(ESTADO e) {
 	IMAGEM(0, -1, ESCALA, "Map.png");
 	e.PU_Shield = 1;
 	imprime_quadr_link(0, -1, e);
 }
 
+/**
+\brief Função que imprime um botão de interface
+@param * link Hiperligação do botão
+@param y Coordenada y onde ficará o botão
+@param * texto String com o texto do botão
+*/
 void imprime_botao(char* link, int y, char* texto) {
 
 	ABRIR_LINK(link);
@@ -1087,6 +1100,15 @@ void avanca_linha(char * texto) {
 	}
 }
 
+/**
+\brief Função que trata de introduzir um novo score nos leaderboards
+@param * leader String principal com todos os scores
+@param * nome Nome do jogador com o score a introduzir
+@param * lvl Nível do jogador com o score a introduzir
+@param * scr Score a introduzir
+@param i Posição onde introduzir
+@param * String modificada com os novos scores
+*/
 void muda_linha(char * leader, char * nome, char *  lvl, char * scr, int i, char * new_leader) {
 	int j, n;
 	char antes[MAX_BUFFER], depois[MAX_BUFFER];
@@ -1464,7 +1486,10 @@ void imprime_texto_ajuda(char *tipo) {
 	}
 }
 
-
+/**
+\brief Função que imprime as páginas de ajuda
+@param *args Tipo de ajuda necessária
+*/
 void ajudas(char* args) {
 
 	imprime_background(args);
