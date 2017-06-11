@@ -590,7 +590,12 @@ void imprime_porta(ESTADO e) {
 		if ((e.jog.x - e.porta_saida.x) <= 1 && (e.jog.y - e.porta_saida.y <= 1) && !posicao_valida(e.espada.x, e.espada.y))
 			imprime_quadr_link (e.porta_saida.x, e.porta_saida.y, e);
 }
-
+/**
+\brief Função que testa se uma posição dada é válida e livre no tabuleiro
+@param e Estado de onde retira as coordenadas da posição
+@param x Coordenada x da posição a ser testada
+@param y Coordenada y da posição a ser testada
+*/
 int valor_casas (ESTADO e, int x, int y) {
 	if (posicao_valida(x, y)) {
 			if (posicao_ocupada(e, x, y))
@@ -600,11 +605,23 @@ int valor_casas (ESTADO e, int x, int y) {
 	return 1;
 }
 
+/**
+\brief Função que calcula a distância entre dois pontos
+@param x Coordenada x do primeiro ponto
+@param y Coordenada y do primeiro ponto
+@param ix Coordenada x do segundo ponto
+@param iy Coordenada y do segundo ponto
+*/
 int dist(int x, int y, int ix, int iy) {
 	int r = abs(x - ix) + abs(y - iy);
 	return r;
 }
 
+/**
+\brief Função que testa se o jogador está numa posição onde é atingido pelos arqueiros
+@param e Estado atual do jogo
+@param i Número do inimigo
+*/
 int range_inimigo_longe(ESTADO e, int i) {
 	int dist;
 	if (i < e.num_inimigos_longe) {
@@ -620,6 +637,11 @@ int range_inimigo_longe(ESTADO e, int i) {
 	return 0;
 }
 
+/**
+\brief Função que testa se o jogador está numa posição onde é atingido pelos inimigos
+@param e Estado atual do jogo
+@param i Número do inimigo
+*/
 int range_inimigo (ESTADO e, int i) {
 	if (i >= e.num_inimigos_longe)
 		if (((abs (e.jog.x - e.inimigo[i].x) == 1 && abs(e.jog.y - e.inimigo[i].y) == 0) || (abs (e.jog.x - e.inimigo[i].x) == 0 && abs(e.jog.y - e.inimigo[i].y) == 1)) && !tem_obstaculo(e, e.jog.x, e.jog.y))
@@ -627,6 +649,11 @@ int range_inimigo (ESTADO e, int i) {
 	return 0;
 }
 
+/**
+\brief Função que avalia qual a melhor posição para o inimigo se deslocar
+@param e Estado atual do jogo
+@param i Número do inimigo
+*/
 ESTADO bot (ESTADO e, int i) {
 	int dx, dy;
 	int tam = dist(e.jog.x, e.jog.y, e.inimigo[i].x, e.inimigo[i].y);
@@ -642,6 +669,11 @@ ESTADO bot (ESTADO e, int i) {
 	return e;
 }
 
+/**
+\brief Função que avalia qual a melhor posição para o arqueiro se deslocar
+@param e Estado atual do jogo
+@param i Número do inimigo
+*/
 ESTADO bot_longe (ESTADO e, int i) {
 	int dx, dy;
 	dx = 0;
@@ -687,6 +719,8 @@ ESTADO mover_inimigos (ESTADO e) {
 /**
 \brief Função que trata de iluminar os inimigos
 @param e Estado de onde retira a posição do inimigo
+@param x Coordenada x da posição do inimigo
+@param y Coordenada y da posição do inimigo
 */
 void iluminar_inimigo (ESTADO e, int x, int y) {
 	int dx, dy;
@@ -698,6 +732,8 @@ void iluminar_inimigo (ESTADO e, int x, int y) {
 /**
 \brief Função que trata de iluminar o jogador
 @param e Estado de onde retira a posição do jogador
+@param x Coordenada x da posição do jogador
+@param y Coordenada y da posição do jogador
 */
 void iluminar_jogador (ESTADO e, int x, int y) {
 	int dx, dy;
@@ -717,6 +753,8 @@ void iluminar_jogador (ESTADO e, int x, int y) {
 /**
 \brief Função que trata de iluminar os inimigos que atacam ao longe
 @param e Estado de onde retira a posição do inimigo
+@param x Coordenada x da posição do inimigo
+@param y Coordenada y da posição do inimigo
 */
 void iluminar_inimigo_longe (ESTADO e, int x, int y) {
 	int dx, dy;
@@ -860,6 +898,10 @@ void scroll(ESTADO *e) {
 
 }
 
+/**
+\brief Função que imprime no ecrã de jogo a imagem do scroll ou da impossibilidade de usar o mesmo
+@param e Estado que usa para saber o que tem de imprimir
+*/
 void imprime_scroll (ESTADO e) {
 	if (e.num_mana >= e.PU_Scroll && e.PU_Scroll != 0) {
 		IMAGEM(0, 12, ESCALA, "Scroll.png");
@@ -868,6 +910,10 @@ void imprime_scroll (ESTADO e) {
 	else IMAGEM(0, 12, ESCALA, "X.png");
 }
 
+/**
+\brief Função que imprime no ecrã de jogo a imagem dos corações (vida, stamina e mana)
+@param e Estado que usa para saber quantos corações tem de imprimir
+*/
 void imprime_coracoes (ESTADO e) {
 	int i, c;
 	for (c=0; c<=2; c++) {
@@ -882,6 +928,10 @@ void imprime_coracoes (ESTADO e) {
 	}
 }
 
+/**
+\brief Função que imprime no ecrã de jogo as poções que o jogador é capaz de apanhar
+@param e Estado que usa para saber onde imprimir as poções
+*/
 void imprime_items (ESTADO e) {
 	int i;
 	for (i = 0; i < (int)e.num_items; i++) {
@@ -892,6 +942,10 @@ void imprime_items (ESTADO e) {
 	}
 }
 
+/**
+\brief Função que imprime no ecrã de jogo o texto que o jogo possui
+@param e Estado que usa para saber onde escrever o texto
+*/
 void imprime_texto(ESTADO e) {
 	char nome[7] = {0};
 	strncpy(nome, e.letra, 6);
@@ -960,6 +1014,12 @@ void imprime_botao(char* link, int y, char* texto) {
 	FECHAR_LINK;
 }
 
+/**
+\brief Função que imprime o link da letra para escolher o nome do save
+@param x Coordenada x onde ficará a letra
+@param y Coordenada y onde ficará a letra
+@param * nome String com o nome completo
+*/
 void imprime_link_letra(int x, int y, char * nome) {
 	char link[MAX_BUFFER];
 	sprintf(link, "http://localhost/cgi-bin/jogo?Start_%s", nome);
@@ -969,6 +1029,10 @@ void imprime_link_letra(int x, int y, char * nome) {
 	FECHAR_LINK;
 }
 
+/**
+\brief Função que imprime no ecrã start as letras do nome do save
+@param * nome String com o nome completo do save
+*/
 void imprime_letras(char * nome) {
 	int i;
 
@@ -1009,6 +1073,10 @@ void imprime_letras(char * nome) {
 		}
 }
 
+/**
+\brief Função que, recebendo um texto, muda de linha sempre que aparece ";"
+@param * texto String com o texto a ser formatado
+*/
 void avanca_linha(char * texto) {
 	int i, j;
 	for (i=0; texto[i]!=0 && texto[i]!=';'; i++);
@@ -1031,6 +1099,12 @@ void muda_linha(char * leader, char * nome, char *  lvl, char * scr, int i, char
 	sprintf(new_leader, "%s%s,%s,%s;%s",antes, nome, lvl, scr, depois);
 }
 
+/**
+\brief Função que guarda o resultado obtido por um jogador no leaderboard
+@param * nome String com o nome do save em que o jogador jogou
+@param nivel Nível em que o jogador ficou
+@param ponto Pontuação que o jogador obteve
+*/
 void guarda_score(char * nome, int nivel, int ponto) {
 	char leader[MAX_BUFFER], save_leader[MAX_BUFFER];
 	ler(leader, "LEADERS.dat");
@@ -1064,6 +1138,10 @@ void guarda_score(char * nome, int nivel, int ponto) {
 	escrever(new_leader, "LEADERS.dat");
 }
 
+/**
+\brief Função que termina o jogo porque o jogador ficou sem vidas
+@param e Estado de jogo onde o mesmo termina
+*/
 void game_over(ESTADO e) {
 	int y,x;
 	for (y=-1; y<TAM + 3; y++)
@@ -1095,6 +1173,10 @@ void game_over(ESTADO e) {
 	imprime_botao(link, 11, "Retry");
 }
 
+/**
+\brief Função que imprime no ecrã fundo do jogo
+@param * texto Botão escolhido pelo utilizador
+*/
 void imprime_background(char* texto) {
 	int y,x;
 	for (y=-1; y<TAM + 3; y++)
@@ -1110,6 +1192,10 @@ void imprime_background(char* texto) {
 	TEXTO_MID(5, 0, ESCALA, 40, "#e4a91f", texto);
 }
 
+/**
+\brief Função que, antes de iniciar um jogo, apresenta um menu ao utilizador para colocar o nome no save
+@param * nome String com o nome do save
+*/
 void introduzir_nome(char * nome) {
 
 	imprime_background("New Game");
@@ -1125,6 +1211,10 @@ void introduzir_nome(char * nome) {
 	imprime_botao(link, 11, "Start");
 }
 
+/**
+\brief Função que recarrega um jogo anteriormente guardado
+@param * args Argumentos necessários para reiniciar o jogo
+*/
 void load(char * args) {
 	ESTADO e;
 
@@ -1142,11 +1232,19 @@ void load(char * args) {
 	sprintf(args, "%s,10,10", nome);
 }
 
+/**
+\brief Função que guarda um jogo num ficheiro
+@param *e Estado atual do jogo que será guardado
+*/
 void save(ESTADO *e) {
 	e->fase = 0;
 	escrever(estado2str(*e), "SAVE.dat");
 }
 
+/**
+\brief Função que inicia um jogo
+@param e Estado a ser criado
+*/
 void jogo(ESTADO e) {
 
 	if (e.game_over) {
@@ -1182,6 +1280,9 @@ void jogo(ESTADO e) {
 
 }
 
+/**
+\brief Função que cria a interface inicial com as várias opções de jogo
+*/
 void interface() {
 	int y,x;
 	for (y=-1; y<TAM + 3; y++)
@@ -1198,6 +1299,9 @@ void interface() {
 	imprime_botao("http://localhost/cgi-bin/jogo?Help", 11, "Help");
 }
 
+/**
+\brief Função que cria um botão para cada item de jogo em "Help". Cada item possui uma breve descrição
+*/
 void imprime_botao_ajuda(int x, int y) {
 	char link[MAX_BUFFER];
 
@@ -1221,6 +1325,9 @@ void imprime_botao_ajuda(int x, int y) {
 	FECHAR_LINK;
 }
 
+/**
+\brief Função que gera o menu "Help"
+*/
 void help() {
 
 	imprime_background("Help");
@@ -1255,6 +1362,9 @@ void help() {
 	imprime_botao("http://localhost/cgi-bin/jogo?", 11, "Main Menu");
 }
 
+/**
+\brief Função que gera o menu "Leaderboards"
+*/
 void leaderboards() {
 	imprime_background("Leaderboards");
 
@@ -1283,6 +1393,10 @@ void leaderboards() {
 	imprime_botao("http://localhost/cgi-bin/jogo?", 11, "Main Menu");
 }
 
+/**
+\brief Função que escreve uma breve descrição em cada item de jogo
+@param *tipo Tipo de item
+*/
 void imprime_texto_ajuda(char *tipo) {
 	if (strcmp(tipo, "Goblin") == 0) {
 		TEXTO(1, 2, ESCALA, 35, "#583a25", "- Main character");
@@ -1350,6 +1464,7 @@ void imprime_texto_ajuda(char *tipo) {
 	}
 }
 
+
 void ajudas(char* args) {
 
 	imprime_background(args);
@@ -1360,6 +1475,10 @@ void ajudas(char* args) {
 	imprime_botao("http://localhost/cgi-bin/jogo?", 11, "Main Menu");
 }
 
+/**
+\brief Função que executa todos os movimentos e seleções feitas no jogo
+@param *args Argumentos necessários para o jogo
+*/
 ESTADO agir (char* args) {
 	ESTADO e;
 	char nome[6];
@@ -1396,6 +1515,10 @@ ESTADO agir (char* args) {
 	return e;
 }
 
+/**
+\brief Função que lê o estado de jogo e decide o que fazer de acordo com o que o utilizador selecionar
+@param *args Argumentos necessários para o jogo
+*/
 void ler_estado(char *args) {
 	char nome[6];
 
@@ -1420,6 +1543,9 @@ void ler_estado(char *args) {
 	}
 }
 
+/**
+\brief Função principal que gera todo o jogo
+*/
 int main() {
     srandom(time(NULL));
 
