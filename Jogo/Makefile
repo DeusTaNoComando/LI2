@@ -3,6 +3,7 @@ FICHEIROS=cgi.h estado.c estado.h jogo.c Makefile ler.c escrever.c ler.h escreve
 
 install: jogo
 	sudo cp jogo /usr/lib/cgi-bin
+	sudo mkdir /var/www/html/images
 	sudo cp Imagens/* /var/www/html/images
 	sudo cp LEADERS.dat /usr/lib/cgi-bin
 	sudo cp SAVE.dat /usr/lib/cgi-bin
